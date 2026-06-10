@@ -1,0 +1,24 @@
+# YOYOSO Lebanon — robots policy
+# Allow legitimate search engines to index the public storefront, but keep
+# private / transactional / no-SEO-value paths out of the index.
+
+User-agent: *
+Allow: /
+
+# Account & transactional pages (nothing to index, keep out of search results)
+Disallow: /login
+Disallow: /register
+Disallow: /forgot-password
+Disallow: /account
+Disallow: /cart
+Disallow: /checkout
+Disallow: /wishlist
+
+# Internal search results (avoid crawl traps / duplicate content)
+Disallow: /search
+
+# Future API routes (Phase 9)
+Disallow: /api/
+
+# TODO Phase 9: publish a sitemap and set the real production domain here.
+Sitemap: https://yoyoso.com/sitemap.xml
