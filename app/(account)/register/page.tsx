@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { Eye, EyeOff, MailCheck } from "lucide-react";
 import { useUIStore } from "@/store/uiStore";
 import { registerAction } from "@/lib/auth/actions";
@@ -91,8 +92,8 @@ export default function RegisterPage() {
     <div className="flex min-h-[80vh] items-center justify-center px-4 py-12">
       <div className="w-full max-w-[420px]">
         {/* Logo */}
-        <Link href="/" className="mb-8 flex items-center justify-center">
-          <span className="font-heading text-2xl font-bold tracking-widest text-primary">YOYOSO</span>
+        <Link href="/" aria-label="YOYOSO home" className="mb-8 flex items-center justify-center">
+          <Image src="/yoyoso-logo.png" alt="YOYOSO" width={600} height={106} priority className="h-9 w-auto" />
         </Link>
 
         <div className="rounded-card border border-border bg-white p-8 shadow-sm">

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import SearchDropdown from "@/components/search/SearchDropdown";
@@ -32,10 +33,21 @@ import { CATEGORY_ICONS } from "@/components/shared/categoryIcons";
 
 function Logo({ className }: { className?: string }) {
   return (
-    <Link href="/" className={`inline-flex items-center ${className ?? ""}`}>
-      <span className="font-heading text-xl font-bold tracking-widest text-primary">
-        YOYOSO
-      </span>
+    <Link
+      href="/"
+      aria-label="YOYOSO home"
+      className={`inline-flex items-center ${className ?? ""}`}
+    >
+      {/* Transparent teal wordmark on the white header. h-6 mobile → h-7 desktop;
+          w-auto keeps the 600×106 aspect ratio crisp on retina. */}
+      <Image
+        src="/yoyoso-logo.png"
+        alt="YOYOSO"
+        width={600}
+        height={106}
+        priority
+        className="h-6 w-auto sm:h-7"
+      />
     </Link>
   );
 }

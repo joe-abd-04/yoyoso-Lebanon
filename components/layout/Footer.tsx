@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { MessageCircle, ChevronDown } from "lucide-react";
 import { siteConfig } from "@/data/config";
 import { buildSupportWhatsAppUrl } from "@/lib/whatsapp";
@@ -158,12 +159,15 @@ export default function Footer() {
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-4">
           {/* ── Section 1: Brand ── */}
           <div>
-            {/* Logo */}
-            <Link href="/" className="mb-3 inline-flex items-center">
-              {/* TODO: replace with real YOYOSO logo image later */}
-              <span className="font-heading text-xl font-bold tracking-widest text-primary">
-                YOYOSO
-              </span>
+            {/* Logo — bg-card footer is light, so the teal wordmark shows fine. */}
+            <Link href="/" aria-label="YOYOSO home" className="mb-3 inline-flex items-center">
+              <Image
+                src="/yoyoso-logo.png"
+                alt="YOYOSO"
+                width={600}
+                height={106}
+                className="h-7 w-auto"
+              />
             </Link>
 
             <p className="mb-5 text-sm leading-relaxed text-text-secondary">
