@@ -216,10 +216,10 @@ export function buildCheckoutWhatsAppMessage(
 
 export interface StoredOrder {
   orderNumber: string;
-  items: Pick<
+  items: (Pick<
     CartItem,
     "name" | "variant" | "quantity" | "priceUSD" | "priceLBP"
-  >[];
+  > & { sku?: string })[];
   customer: CustomerDetails;
   address: AddressDetails;
   paymentMethod: string;

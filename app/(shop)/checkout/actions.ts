@@ -210,12 +210,14 @@ export async function placeOrder(
   // 6. Build the confirmation snapshot the client shows on /checkout/confirmation.
   const order: StoredOrder = {
     orderNumber: inserted.order_number,
-    items: authoritativeItems.map((i) => ({
+    items: authoritativeItems.map((i, idx) => ({
       name: i.name,
       variant: i.variant,
       quantity: i.quantity,
       priceUSD: i.priceUSD,
       priceLBP: i.priceLBP,
+      // SKU snapshot (from the authoritative DB product) for the email receipt.
+      sku: orderItems[idx]?.sku,
     })),
     customer: {
       firstName: sanitizeText(data.firstName),

@@ -13,6 +13,8 @@
 import { contactSchema } from "@/lib/validation";
 import { sanitizeText } from "@/lib/sanitize";
 import { createServerClient } from "@/lib/supabase/server";
+import { getContactInfo } from "@/lib/data/settings";
+import { sendContactEmails } from "@/lib/email/contact";
 import { checkRateLimit, RL } from "@/lib/security/rate-limit";
 import { getClientIp } from "@/lib/security/request";
 
@@ -57,14 +59,16 @@ export async function submitContactMessage(input: {
   }
 
   const d = parsed.data;
-  const supabase = createServerClient();
-  const { error } = await supabase.from("contact_messages").insert({
+  const clean = {
     name: sanitizeText(d.fullName),
     email: d.email,
     phone: sanitizeText(d.phone),
     subject: d.subject,
     message: sanitizeText(d.message),
-  });
+  };
+
+  const supabase = createServerClient();
+  const { error } = await supabase.from("contact_messages").insert(clean);
 
   if (error) {
     console.error("[contact] insert error:", error.message);
@@ -74,6 +78,14 @@ export async function submitContactMessage(input: {
     };
   }
 
-  // TODO(launch): send a notification email to the store inbox via Resend.
+  // Notify the store (+ auto-reply the customer). Best-effort — a failed email
+  // must never fail a submission that was already saved to the DB.
+  try {
+    const { email: storeEmail } = await getContactInfo();
+    await sendContactEmails(clean, storeEmail);
+  } catch (err) {
+    console.error("[contact] notification email failed:", err);
+  }
+
   return { ok: true };
 }
