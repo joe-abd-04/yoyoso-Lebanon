@@ -8,7 +8,9 @@
 
 import { createServerClient } from "@/lib/supabase/server";
 import { PRODUCT_IMAGE_PLACEHOLDER } from "@/lib/products/placeholder";
+import { toPaletteColor } from "@/lib/products/colors";
 import type { Product as ProductRow } from "@/lib/supabase/types";
+import type { AdminProductInput } from "@/lib/validation";
 
 export const ADMIN_PAGE_SIZE = 20;
 
@@ -136,4 +138,61 @@ export async function getAdminProductById(
     return null;
   }
   return data;
+}
+
+/** Keep the first entry per value (legacy color swatches can collapse to one). */
+function dedupeByValue<T extends { value: string }>(items: T[]): T[] {
+  const seen = new Set<string>();
+  return items.filter((it) => {
+    if (seen.has(it.value)) return false;
+    seen.add(it.value);
+    return true;
+  });
+}
+
+/**
+ * Map a raw product row → the AdminProductInput shape the product form expects.
+ * Shared by the Edit page and the Duplicate flow (Add form pre-filled).
+ *
+ * `opts.blankSku` clears the SKU — used when duplicating, since SKU is required
+ * and must be unique, so the admin is forced to set a new one before saving.
+ */
+export function productRowToFormInput(
+  row: ProductRow,
+  opts?: { blankSku?: boolean },
+): AdminProductInput {
+  const images = row.images ?? [];
+  // A variant image is only carried over if it's still one of the product's images.
+  const keepImage = (url?: string) => (url && images.includes(url) ? url : "");
+
+  return {
+    name: row.name,
+    description: row.description ?? "",
+    priceUSD: String(row.price_usd),
+    originalPriceUSD:
+      row.original_price_usd != null ? String(row.original_price_usd) : "",
+    categoryId: row.category_id,
+    subcategory: row.subcategory ?? "",
+    sku: opts?.blankSku ? "" : (row.sku ?? ""),
+    badge: row.badge === "SALE" || row.badge === "HOT" ? row.badge : "",
+    inStock: row.in_stock,
+    hideNewBadge: row.hide_new_badge,
+    // Split the stored variants jsonb back into the three editable groups.
+    colors: dedupeByValue(
+      (row.variants ?? [])
+        .filter((v) => v.type === "color")
+        .map((v) => {
+          const c = toPaletteColor(v.value, v.colorHex);
+          return { value: c.name, colorHex: c.hex, image: keepImage(v.image) };
+        }),
+    ),
+    models: (row.variants ?? [])
+      .filter((v) => v.type === "model")
+      .map((v) => ({ value: v.value, image: keepImage(v.image) })),
+    sizes: (row.variants ?? [])
+      .filter((v) => v.type === "size")
+      .map((v) => ({ value: v.value })),
+    images,
+    thumbnail: row.thumbnail ?? "",
+  };
 }

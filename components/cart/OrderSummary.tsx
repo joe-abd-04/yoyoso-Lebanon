@@ -136,7 +136,7 @@ export default function OrderSummary({
         Secure &amp; Safe Checkout
       </div>
       <p className="mt-2 text-center text-[11px] text-text-secondary">
-        Card Payment · Cash on Delivery
+        Cash on Delivery
       </p>
     </div>
   );

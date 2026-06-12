@@ -45,7 +45,7 @@ export default function PrivacyPolicyPage() {
               Introduction
             </h2>
             <p className="mt-3 text-text-secondary">
-              YOYOSO Lebanon is committed to protecting your privacy. This Privacy Policy explains how we collect, use, and safeguard your personal information when you visit our website or purchase from our stores. By using our services, you agree to the practices described in this policy.
+              YOYOSO Lebanon is committed to protecting your privacy. This Privacy Policy explains how we collect, use, and safeguard your personal information when you visit our website (<strong className="text-text-primary">yoyoso-lb.com</strong>) or purchase from our stores. By using our services, you agree to the practices described in this policy.
             </p>
           </section>
 

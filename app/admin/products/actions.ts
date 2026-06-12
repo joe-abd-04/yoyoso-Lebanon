@@ -23,6 +23,8 @@ import type { Database } from "@/lib/supabase/types";
 import {
   PRODUCT_IMAGES_BUCKET,
   productImagePaths,
+  productImagePathFromUrl,
+  isProductImageUrl,
 } from "@/lib/storage/product-images";
 
 export type ProductActionResult =
@@ -135,6 +137,74 @@ async function deleteStorageImages(supabase: DB, urls: string[]): Promise<void> 
   }
 }
 
+/**
+ * Copy any bucket images that are ALREADY referenced by another product to
+ * fresh storage objects, returning an old-URL → new-URL remap. Used on create
+ * so a duplicated product gets its OWN image files — deleting the source
+ * product later (which runs orphan cleanup) can never break this product's
+ * images. Freshly-uploaded images (unique to this new product) match nothing
+ * and are left untouched, so a normal "Add product" copies nothing.
+ * Best-effort: on a copy failure we keep the original URL (still works, just
+ * shared) rather than failing the whole create.
+ */
+async function copySharedImages(
+  supabase: DB,
+  images: string[],
+): Promise<Map<string, string>> {
+  const remap = new Map<string, string>();
+  const bucketUrls = images.filter((u) => isProductImageUrl(u));
+  if (bucketUrls.length === 0) return remap;
+
+  // Which of these URLs does some existing product already use?
+  const { data: rows, error } = await supabase
+    .from("products")
+    .select("images")
+    .overlaps("images", bucketUrls);
+  if (error) {
+    console.error("[copySharedImages] lookup", error.message);
+    return remap;
+  }
+
+  const shared = new Set<string>();
+  for (const r of rows ?? []) {
+    for (const u of r.images ?? []) if (bucketUrls.includes(u)) shared.add(u);
+  }
+
+  for (const url of shared) {
+    const fromPath = productImagePathFromUrl(url);
+    if (!fromPath) continue;
+    const ext = fromPath.split(".").pop() || "webp";
+    const toPath = `${crypto.randomUUID()}.${ext}`;
+    const { error: copyErr } = await supabase.storage
+      .from(PRODUCT_IMAGES_BUCKET)
+      .copy(fromPath, toPath);
+    if (copyErr) {
+      console.error("[copySharedImages] copy", copyErr.message);
+      continue; // keep the original URL
+    }
+    const { data: pub } = supabase.storage
+      .from(PRODUCT_IMAGES_BUCKET)
+      .getPublicUrl(toPath);
+    if (pub?.publicUrl) remap.set(url, pub.publicUrl);
+  }
+  return remap;
+}
+
+/** Apply an image-URL remap across all places a product stores image URLs. */
+function applyImageRemap(
+  data: AdminProductInput,
+  remap: Map<string, string>,
+): AdminProductInput {
+  const map = (u?: string) => (u ? (remap.get(u) ?? u) : u);
+  return {
+    ...data,
+    images: data.images.map((u) => map(u) as string),
+    thumbnail: map(data.thumbnail) ?? "",
+    colors: data.colors.map((c) => ({ ...c, image: map(c.image) })),
+    models: data.models.map((m) => ({ ...m, image: map(m.image) })),
+  };
+}
+
 /** Revalidate everything under the root layout so the storefront reflects the change. */
 function revalidateStorefront() {
   revalidatePath("/", "layout");
@@ -150,9 +220,15 @@ export async function createProduct(
   if (!parsed.success) {
     return { ok: false, error: "Please check the form and try again." };
   }
-  const data = parsed.data;
 
   const supabase = createServerClient();
+
+  // If any images are already used by another product (i.e. this is a
+  // duplicate), copy them to fresh storage objects and remap. Normal creates
+  // (freshly-uploaded, unique images) copy nothing.
+  const remap = await copySharedImages(supabase, parsed.data.images);
+  const data = remap.size > 0 ? applyImageRemap(parsed.data, remap) : parsed.data;
+
   const slug = await uniqueSlug(supabase, slugify(data.name));
 
   // images + thumbnail come from buildDbFields (uploaded via Storage; empty is

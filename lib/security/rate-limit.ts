@@ -39,6 +39,9 @@ export const RL = {
   contact: {
     ip: { max: 3, windowSeconds: 600 }, // 3 / 10 min per IP
   },
+  newsletter: {
+    ip: { max: 5, windowSeconds: 600 }, // 5 / 10 min per IP
+  },
 } as const;
 
 // Account lockout: 5 consecutive failures within 15 min → temporary lock that

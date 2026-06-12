@@ -6,13 +6,15 @@ import { Mail, ArrowRight } from "lucide-react";
 import { useUIStore } from "@/store/uiStore";
 import { newsletterSchema } from "@/lib/validation";
 import { useBotGuard, Honeypot } from "@/components/shared/botProtection";
+import { subscribeToNewsletter } from "@/lib/newsletter/actions";
 
 export default function NewsletterSection() {
   const [email, setEmail] = useState("");
+  const [submitting, setSubmitting] = useState(false);
   const showToast = useUIStore((s) => s.showToast);
   const { honeypotRef, check, recordSubmit } = useBotGuard({ formId: "newsletter" });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     // Validate + length-cap the email before doing anything with it.
     const parsed = newsletterSchema.safeParse({ email });
@@ -27,7 +29,24 @@ export default function NewsletterSection() {
       return;
     }
     recordSubmit();
-    showToast("You're subscribed! Watch your inbox.", "success");
+
+    setSubmitting(true);
+    const result = await subscribeToNewsletter({
+      email,
+      hp: honeypotRef.current?.value ?? "",
+    });
+    setSubmitting(false);
+
+    if (!result.ok) {
+      showToast(result.error, "error");
+      return;
+    }
+    showToast(
+      result.already
+        ? "You're already subscribed — thanks!"
+        : "You're subscribed! Watch your inbox.",
+      "success",
+    );
     setEmail("");
   };
 
@@ -67,9 +86,10 @@ export default function NewsletterSection() {
             />
             <button
               type="submit"
-              className="inline-flex items-center justify-center gap-2 rounded-button bg-primary px-6 py-3 text-sm font-bold text-white shadow-sm transition-all hover:bg-primary-dark hover:shadow-md"
+              disabled={submitting}
+              className="inline-flex items-center justify-center gap-2 rounded-button bg-primary px-6 py-3 text-sm font-bold text-white shadow-sm transition-all hover:bg-primary-dark hover:shadow-md disabled:opacity-70"
             >
-              Subscribe
+              {submitting ? "Subscribing…" : "Subscribe"}
               <ArrowRight size={15} />
             </button>
           </form>

@@ -45,7 +45,7 @@ export default function TermsPage() {
               General Information
             </h2>
             <p className="mt-3 text-text-secondary">
-              The website <strong className="text-text-primary">yoyoso-lb.com</strong> {/* TODO: update when domain is confirmed */} is operated by <strong className="text-text-primary">Construst Group S.A.R.L</strong>, registered in Lebanon with offices at Dhour Street, Amioun, Koura, Lebanon and Dbayeh, Metn, Lebanon. By accessing or using this website, you agree to be bound by these Terms &amp; Conditions.
+              The website <strong className="text-text-primary">yoyoso-lb.com</strong> is operated by <strong className="text-text-primary">Construst Group S.A.R.L</strong>, registered in Lebanon with offices at Dhour Street, Amioun, Koura, Lebanon and Dbayeh, Metn, Lebanon. By accessing or using this website, you agree to be bound by these Terms &amp; Conditions.
             </p>
             <p className="mt-3 text-text-secondary">
               We reserve the right to update these terms at any time. Continued use of the website following any changes constitutes your acceptance of the revised terms.

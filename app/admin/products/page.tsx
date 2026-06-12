@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Plus, Pencil, ChevronLeft, ChevronRight, PackageOpen } from "lucide-react";
+import { Plus, Pencil, Copy, ChevronLeft, ChevronRight, PackageOpen } from "lucide-react";
 
 const FOURTEEN_DAYS_MS = 14 * 24 * 60 * 60 * 1000;
 import { requireAdmin } from "@/lib/auth/admin";
@@ -192,6 +192,14 @@ export default async function AdminProductsPage({
                           className="rounded-button p-2 text-text-secondary transition-colors hover:bg-primary/10 hover:text-primary"
                         >
                           <Pencil size={16} />
+                        </Link>
+                        <Link
+                          href={`/admin/products/new?from=${p.id}`}
+                          aria-label={`Duplicate ${p.name}`}
+                          title="Duplicate"
+                          className="rounded-button p-2 text-text-secondary transition-colors hover:bg-primary/10 hover:text-primary"
+                        >
+                          <Copy size={16} />
                         </Link>
                         <DeleteProductButton id={p.id} name={p.name} />
                       </div>
