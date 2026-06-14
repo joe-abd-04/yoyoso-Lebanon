@@ -22,7 +22,9 @@ import {
   adminPromoSchema,
   adminContactSchema,
   addAdminSchema,
+  adminInstagramSchema,
 } from "@/lib/validation";
+import { isProductImageUrl } from "@/lib/storage/product-images";
 import { SETTINGS_KEYS } from "@/lib/settings/shared";
 import { SETTINGS_CACHE_TAG } from "@/lib/data/settings";
 import type { Json } from "@/lib/supabase/types";
@@ -128,6 +130,36 @@ export async function updateContactInfo(input: {
   };
 
   const error = await saveSetting(SETTINGS_KEYS.contact, value);
+  if (error) return { ok: false, error };
+
+  revalidateSettings();
+  return { ok: true };
+}
+
+// ── Instagram "Follow us" gallery ──────────────────────────────────────────────
+
+export async function updateInstagram(input: {
+  handle: string;
+  profileUrl: string;
+  posts: { image: string; url: string }[];
+}): Promise<SettingsActionResult> {
+  if (!(await getAdminUser())) return { ok: false, error: "Not authorized." };
+
+  const parsed = adminInstagramSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: firstError(parsed.error) };
+
+  const value = {
+    handle: parsed.data.handle.replace(/^@+/, ""),
+    profileUrl: parsed.data.profileUrl,
+    // Only keep images that live in OUR bucket (never persist arbitrary external
+    // image URLs); cap at 6. The per-tile `url` is an outbound link, left as-is.
+    posts: parsed.data.posts
+      .filter((p) => isProductImageUrl(p.image))
+      .slice(0, 6)
+      .map((p) => ({ image: p.image, url: p.url })),
+  };
+
+  const error = await saveSetting(SETTINGS_KEYS.instagram, value);
   if (error) return { ok: false, error };
 
   revalidateSettings();

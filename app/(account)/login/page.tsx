@@ -15,7 +15,6 @@ import { cn } from "@/lib/utils";
 import { loginSchema, type LoginInput } from "@/lib/validation";
 import { useBotGuard, Honeypot } from "@/components/shared/botProtection";
 import Turnstile, { turnstileConfigured } from "@/components/shared/Turnstile";
-import GoogleButton from "@/components/shared/GoogleButton";
 
 const CALLBACK_ERRORS: Record<string, string> = {
   link_invalid:
@@ -218,17 +217,7 @@ function LoginForm() {
             </button>
           </form>
 
-          <div className="mt-6 flex items-center gap-3">
-            <span className="h-px flex-1 bg-border" />
-            <span className="text-xs text-text-secondary">or</span>
-            <span className="h-px flex-1 bg-border" />
-          </div>
-
-          <div className="mt-4">
-            <GoogleButton label="Sign in with Google" next={next} />
-          </div>
-
-          <p className="mt-4 text-center text-sm text-text-secondary">
+          <p className="mt-6 text-center text-sm text-text-secondary">
             Don&apos;t have an account?{" "}
             <Link href="/register" className="font-semibold text-primary hover:text-primary-dark">
               Create one

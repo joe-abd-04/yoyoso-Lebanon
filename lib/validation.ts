@@ -253,6 +253,40 @@ export type AdminContactInput = z.infer<typeof adminContactSchema>;
 export const addAdminSchema = z.object({ email });
 export type AddAdminInput = z.infer<typeof addAdminSchema>;
 
+// ── Admin: Instagram "Follow us" gallery ─────────────────────────────────────
+
+const httpUrl = (max = 500) =>
+  z
+    .string()
+    .trim()
+    .max(max, "URL is too long")
+    .refine(isSafeImageUrl, "Enter a valid http(s) URL");
+
+export const adminInstagramSchema = z.object({
+  // Handle without "@" (the server strips any the admin types).
+  handle: z
+    .string()
+    .trim()
+    .max(40, "Handle is too long")
+    .regex(/^@?[A-Za-z0-9._]*$/, "Use letters, numbers, dots and underscores"),
+  profileUrl: httpUrl(300),
+  posts: z
+    .array(
+      z.object({
+        // Must be an uploaded product-images URL (re-checked in the action).
+        image: httpUrl(500),
+        // Optional per-tile link; "" = fall back to the profile URL.
+        url: z
+          .string()
+          .trim()
+          .max(500, "URL is too long")
+          .refine((v) => v === "" || isSafeImageUrl(v), "Enter a valid http(s) URL"),
+      }),
+    )
+    .max(6, "At most 6 images"),
+});
+export type AdminInstagramInput = z.infer<typeof adminInstagramSchema>;
+
 // ── Admin: product form ─────────────────────────────────────────────────────
 //
 // One schema, shared by the client form (zodResolver) AND the server action

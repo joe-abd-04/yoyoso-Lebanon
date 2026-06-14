@@ -20,6 +20,7 @@ import {
   getDeliveryFee,
   getActivePromo,
   getContactInfo,
+  getInstagram,
 } from "@/lib/data/settings";
 
 const jakarta = Plus_Jakarta_Sans({
@@ -47,13 +48,15 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const [categories, products, deliveryFee, promo, contact] = await Promise.all([
-    getCategories(),
-    getProducts(),
-    getDeliveryFee(),
-    getActivePromo(),
-    getContactInfo(),
-  ]);
+  const [categories, products, deliveryFee, promo, contact, instagram] =
+    await Promise.all([
+      getCategories(),
+      getProducts(),
+      getDeliveryFee(),
+      getActivePromo(),
+      getContactInfo(),
+      getInstagram(),
+    ]);
 
   return (
     <html lang="en">
@@ -63,7 +66,7 @@ export default async function RootLayout({
         <AuthProvider>
           <CategoriesProvider categories={categories}>
             <ProductsProvider products={products}>
-              <SettingsProvider settings={{ deliveryFee, promo, contact }}>
+              <SettingsProvider settings={{ deliveryFee, promo, contact, instagram }}>
                 {/* Storefront chrome — hidden on the /admin panel (own shell). */}
                 <HideOnAdmin>
                   <AnnouncementBar />

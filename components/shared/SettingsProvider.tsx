@@ -16,20 +16,24 @@ import { createContext, useContext, type ReactNode } from "react";
 import { siteConfig } from "@/data/config";
 import {
   DEFAULT_CONTACT,
+  DEFAULT_INSTAGRAM,
   type ContactInfo,
   type PromoConfig,
+  type InstagramConfig,
 } from "@/lib/settings/shared";
 
 interface SiteSettings {
   deliveryFee: number;
   promo: PromoConfig | null;
   contact: ContactInfo;
+  instagram: InstagramConfig;
 }
 
 const SettingsContext = createContext<SiteSettings>({
   deliveryFee: siteConfig.deliveryFee,
   promo: null,
   contact: DEFAULT_CONTACT,
+  instagram: DEFAULT_INSTAGRAM,
 });
 
 export function SettingsProvider({
@@ -59,4 +63,9 @@ export function useActivePromo(): PromoConfig | null {
 /** Store contact info (phone / WhatsApp / email), with safe fallbacks. */
 export function useContactInfo(): ContactInfo {
   return useContext(SettingsContext).contact;
+}
+
+/** Curated Instagram gallery config (handle + profile URL + posts). */
+export function useInstagram(): InstagramConfig {
+  return useContext(SettingsContext).instagram;
 }

@@ -3,11 +3,13 @@ import {
   getDeliveryFee,
   getPromoConfig,
   getContactInfo,
+  getInstagram,
 } from "@/lib/data/settings";
 import { listAdmins } from "@/lib/data/admin-settings";
 import DeliveryFeeForm from "@/components/admin/settings/DeliveryFeeForm";
 import PromoForm from "@/components/admin/settings/PromoForm";
 import ContactForm from "@/components/admin/settings/ContactForm";
+import InstagramManager from "@/components/admin/settings/InstagramManager";
 import AdminsManager from "@/components/admin/settings/AdminsManager";
 
 // Admin Settings. The parent layout already enforced requireAdmin(); we call it
@@ -16,10 +18,11 @@ import AdminsManager from "@/components/admin/settings/AdminsManager";
 export default async function AdminSettingsPage() {
   const user = await requireAdmin();
 
-  const [deliveryFee, promo, contact, admins] = await Promise.all([
+  const [deliveryFee, promo, contact, instagram, admins] = await Promise.all([
     getDeliveryFee(),
     getPromoConfig(),
     getContactInfo(),
+    getInstagram(),
     listAdmins(),
   ]);
 
@@ -36,6 +39,7 @@ export default async function AdminSettingsPage() {
         <DeliveryFeeForm initialFee={deliveryFee} />
         <PromoForm initial={promo} />
         <ContactForm initial={contact} />
+        <InstagramManager initial={instagram} />
         <AdminsManager admins={admins} currentUserId={user.id} />
       </div>
     </div>

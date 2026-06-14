@@ -11,10 +11,13 @@ import {
   SETTINGS_KEYS,
   normalizePromo,
   normalizeContact,
+  normalizeInstagram,
   isPromoActive,
   DEFAULT_CONTACT,
+  DEFAULT_INSTAGRAM,
   type PromoConfig,
   type ContactInfo,
+  type InstagramConfig,
 } from "@/lib/settings/shared";
 
 const FALLBACK_DELIVERY_FEE = 4.5;
@@ -82,4 +85,10 @@ export async function getActivePromo(): Promise<PromoConfig | null> {
 export async function getContactInfo(): Promise<ContactInfo> {
   const val = await getSetting(SETTINGS_KEYS.contact);
   return val ? normalizeContact(val) : { ...DEFAULT_CONTACT };
+}
+
+/** Curated Instagram gallery config (handle + profile URL + up to 6 posts). */
+export async function getInstagram(): Promise<InstagramConfig> {
+  const val = await getSetting(SETTINGS_KEYS.instagram);
+  return val ? normalizeInstagram(val) : { ...DEFAULT_INSTAGRAM, posts: [] };
 }

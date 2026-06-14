@@ -51,10 +51,9 @@ export default async function Home() {
         <StoreLocatorPreview stores={stores} />
       </div>
 
-      {/* Instagram — page surface */}
-      <div className="py-14 md:py-20">
-        <InstagramSection />
-      </div>
+      {/* Instagram — page surface; self-contained spacing, hides itself when
+          the admin hasn't curated any images yet. */}
+      <InstagramSection />
 
       {/* Newsletter — self-contained bg-surface + py */}
       <NewsletterSection />

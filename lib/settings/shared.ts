@@ -13,6 +13,7 @@ export const SETTINGS_KEYS = {
   deliveryFee: "delivery_fee",
   promo: "promo",
   contact: "contact",
+  instagram: "instagram",
 } as const;
 
 // ── Promo / discount code ───────────────────────────────────────────────────────
@@ -84,4 +85,55 @@ export function normalizeContact(raw: unknown): ContactInfo {
     whatsapp: pick(r.whatsapp, DEFAULT_CONTACT.whatsapp),
     email: pick(r.email, DEFAULT_CONTACT.email),
   };
+}
+
+// ── Instagram "Follow us" gallery (hand-curated by the admin) ────────────────────
+
+/** Max images shown in the homepage Instagram gallery. */
+export const MAX_INSTAGRAM_POSTS = 6;
+
+/** One curated tile: an image URL + an optional per-image outbound link. */
+export interface InstagramPost {
+  image: string;
+  /** Custom link for this tile; empty string ⇒ fall back to the profile URL. */
+  url: string;
+}
+
+export interface InstagramConfig {
+  /** Handle WITHOUT the leading "@", e.g. "yoyoso". */
+  handle: string;
+  /** Full profile URL the heading/button/tiles link to. */
+  profileUrl: string;
+  posts: InstagramPost[];
+}
+
+/** Placeholder defaults until the owner curates real posts in the admin panel. */
+export const DEFAULT_INSTAGRAM: InstagramConfig = {
+  handle: "yoyoso",
+  profileUrl: "https://www.instagram.com/yoyoso/",
+  posts: [],
+};
+
+/** Parse loosely-typed jsonb into a safe InstagramConfig (clamped to the max). */
+export function normalizeInstagram(raw: unknown): InstagramConfig {
+  const r = (raw && typeof raw === "object" ? raw : {}) as Record<
+    string,
+    unknown
+  >;
+  const str = (v: unknown) => (typeof v === "string" ? v.trim() : "");
+
+  // Strip any leading "@" the admin may have typed.
+  const handle = str(r.handle).replace(/^@+/, "") || DEFAULT_INSTAGRAM.handle;
+  const profileUrl = str(r.profileUrl) || DEFAULT_INSTAGRAM.profileUrl;
+
+  const rawPosts = Array.isArray(r.posts) ? r.posts : [];
+  const posts: InstagramPost[] = rawPosts
+    .map((p) => {
+      const o = (p && typeof p === "object" ? p : {}) as Record<string, unknown>;
+      return { image: str(o.image), url: str(o.url) };
+    })
+    .filter((p) => p.image.length > 0)
+    .slice(0, MAX_INSTAGRAM_POSTS);
+
+  return { handle, profileUrl, posts };
 }

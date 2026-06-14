@@ -83,6 +83,18 @@ const nextConfig: NextConfig = {
   devIndicators: false,
   // Don't advertise the framework/version in the response.
   poweredByHeader: false,
+  // Allow next/image to optimize images served from our public Supabase Storage
+  // bucket (product images + the curated Instagram gallery). Scoped to the
+  // public object path so only public bucket files are proxied.
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "*.supabase.co",
+        pathname: "/storage/v1/object/public/**",
+      },
+    ],
+  },
   async headers() {
     return [
       {

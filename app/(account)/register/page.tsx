@@ -12,7 +12,6 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useBotGuard, Honeypot } from "@/components/shared/botProtection";
 import Turnstile, { turnstileConfigured } from "@/components/shared/Turnstile";
-import GoogleButton from "@/components/shared/GoogleButton";
 
 export default function RegisterPage() {
   const showToast = useUIStore((s) => s.showToast);
@@ -302,17 +301,7 @@ export default function RegisterPage() {
                 </button>
               </form>
 
-              <div className="mt-6 flex items-center gap-3">
-                <span className="h-px flex-1 bg-border" />
-                <span className="text-xs text-text-secondary">or</span>
-                <span className="h-px flex-1 bg-border" />
-              </div>
-
-              <div className="mt-4">
-                <GoogleButton label="Sign up with Google" />
-              </div>
-
-              <p className="mt-4 text-center text-sm text-text-secondary">
+              <p className="mt-6 text-center text-sm text-text-secondary">
                 Already have an account?{" "}
                 <Link href="/login" className="font-semibold text-primary hover:text-primary-dark">
                   Sign In
