@@ -69,11 +69,16 @@ export function buildWhatsAppCartMessage(
   ].join("\n");
 }
 
-/** Build the wa.me deep link for a given message (optionally to a specific number). */
-export function buildWhatsAppUrl(message: string, number?: string): string {
-  return `https://wa.me/${getWhatsAppNumber(number)}?text=${encodeURIComponent(
-    message,
-  )}`;
+/**
+ * Build the wa.me deep link, optionally to a specific number.
+ *
+ * WhatsApp links across the site open a BLANK chat — we intentionally do NOT
+ * append a `?text=` prefilled message. The `message` argument is kept for
+ * backward compatibility (callers still pass one) but is ignored.
+ */
+export function buildWhatsAppUrl(message?: string, number?: string): string {
+  void message;
+  return `https://wa.me/${getWhatsAppNumber(number)}`;
 }
 
 /** Open the WhatsApp chat in a new tab (no-op outside the browser). */
@@ -90,7 +95,7 @@ export function openWhatsApp(message: string): void {
 export const SUPPORT_MESSAGE =
   "Hi! I have a question about YOYOSO products.";
 
-/** wa.me deep link pre-filled with the support enquiry message. */
+/** wa.me deep link that opens a blank chat (no prefilled message). */
 export function buildSupportWhatsAppUrl(number?: string): string {
   return buildWhatsAppUrl(SUPPORT_MESSAGE, number);
 }

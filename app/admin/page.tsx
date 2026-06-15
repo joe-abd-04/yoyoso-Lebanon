@@ -25,6 +25,12 @@ export default async function AdminDashboardPage() {
     user.email?.split("@")[0] ||
     "there";
 
+  // The Catalog row shows 2 cards normally, +1 ("Cancelled") when there are any.
+  // Match the desktop column count to the card count so the row fills with no
+  // empty cells beneath it.
+  const showCancelled = stats.orders.cancelled > 0;
+  const catalogColsLg = showCancelled ? "lg:grid-cols-3" : "lg:grid-cols-2";
+
   return (
     <div className="mx-auto max-w-5xl">
       <h1 className="font-heading text-2xl font-extrabold tracking-tight text-text-primary sm:text-3xl">
@@ -38,7 +44,7 @@ export default async function AdminDashboardPage() {
       <h2 className="mt-6 text-xs font-bold uppercase tracking-wide text-text-secondary">
         Orders
       </h2>
-      <div className="mt-3 grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <div className="mt-3 grid auto-rows-fr grid-cols-2 gap-4 lg:grid-cols-4">
         <StatCard
           icon={<ClipboardList size={20} />}
           label="Total orders"
@@ -72,7 +78,7 @@ export default async function AdminDashboardPage() {
       <h2 className="mt-7 text-xs font-bold uppercase tracking-wide text-text-secondary">
         Activity
       </h2>
-      <div className="mt-3 grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <div className="mt-3 grid auto-rows-fr grid-cols-2 gap-4">
         <StatCard
           icon={<CalendarDays size={20} />}
           label="Orders today"
@@ -89,7 +95,7 @@ export default async function AdminDashboardPage() {
       <h2 className="mt-7 text-xs font-bold uppercase tracking-wide text-text-secondary">
         Catalog
       </h2>
-      <div className="mt-3 grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <div className={`mt-3 grid auto-rows-fr grid-cols-2 gap-4 ${catalogColsLg}`}>
         <StatCard
           icon={<Package size={20} />}
           label="Products"
@@ -103,7 +109,7 @@ export default async function AdminDashboardPage() {
           href="/admin/products?stock=out"
           tone={stats.products.outOfStock > 0 ? "red" : undefined}
         />
-        {stats.orders.cancelled > 0 && (
+        {showCancelled && (
           <StatCard
             icon={<XCircle size={20} />}
             label="Cancelled orders"
@@ -170,7 +176,7 @@ function StatCard({
   );
 
   const base =
-    "flex items-center gap-3 rounded-card border border-border bg-white p-4 shadow-sm";
+    "flex h-full items-center gap-3 rounded-card border border-border bg-white p-4 shadow-sm";
 
   if (href) {
     return (
