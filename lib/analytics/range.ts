@@ -10,6 +10,8 @@
 // admin; revisit if the store ever needs per-timezone reporting.
 
 export type AnalyticsPreset =
+  | "today"
+  | "week"
   | "last7"
   | "last30"
   | "month"
@@ -26,7 +28,18 @@ export const ANALYTICS_PRESETS: { key: AnalyticsPreset; label: string }[] = [
   { key: "all", label: "All time" },
 ];
 
+/** Presets for the dashboard "Orders" card (Today/This week/month/year/all). */
+export const DASHBOARD_ORDER_PRESETS: { key: AnalyticsPreset; label: string }[] = [
+  { key: "today", label: "Today" },
+  { key: "week", label: "This week" },
+  { key: "month", label: "This month" },
+  { key: "year", label: "This year" },
+  { key: "all", label: "All time" },
+];
+
 const PRESET_KEYS = new Set<AnalyticsPreset>([
+  "today",
+  "week",
   "last7",
   "last30",
   "month",
@@ -113,6 +126,15 @@ export function resolveRange(
   });
 
   switch (preset) {
+    case "today":
+      return make(todayStart.getTime(), "Today");
+    case "week": {
+      // Week starts Monday (local time).
+      const start = new Date(todayStart);
+      const offset = (start.getDay() + 6) % 7; // days since Monday
+      start.setDate(start.getDate() - offset);
+      return make(start.getTime(), "This week");
+    }
     case "last7": {
       const start = new Date(todayStart);
       start.setDate(start.getDate() - 6);

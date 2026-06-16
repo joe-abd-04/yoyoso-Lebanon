@@ -68,6 +68,49 @@ function money(n: number): number {
   return Math.round(n * 100) / 100;
 }
 
+export interface OrdersRangeResult {
+  count: number; // all orders created in the window (incl. cancelled)
+  revenue: number; // sum of totals, EXCLUDING cancelled (matches analytics)
+}
+
+/**
+ * Order count + revenue for a created_at window. `startISO` null = no lower
+ * bound (all time). Selects only the two needed columns and sums server-side —
+ * never ships order rows to the client. Fails soft to zeroes.
+ */
+export async function getOrdersInRange(
+  startISO: string | null,
+  endISO: string,
+): Promise<OrdersRangeResult> {
+  try {
+    const supabase = createServerClient();
+    let query = supabase
+      .from("orders")
+      .select("total_usd,status")
+      .lte("created_at", endISO);
+    if (startISO) query = query.gte("created_at", startISO);
+
+    const { data, error } = await query;
+    if (error || !data) {
+      if (error) console.error("[getOrdersInRange]", error.message);
+      return { count: 0, revenue: 0 };
+    }
+
+    let count = 0;
+    let revenue = 0;
+    for (const o of data) {
+      count += 1;
+      if (o.status !== "cancelled") {
+        revenue += typeof o.total_usd === "number" ? o.total_usd : 0;
+      }
+    }
+    return { count, revenue: money(revenue) };
+  } catch (err) {
+    console.error("[getOrdersInRange] unexpected", err);
+    return { count: 0, revenue: 0 };
+  }
+}
+
 type OrderAggRow = Pick<
   Order,
   "status" | "total_usd" | "created_at" | "items"

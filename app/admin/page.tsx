@@ -1,23 +1,29 @@
 import Link from "next/link";
 import {
   Package,
-  ClipboardList,
   Clock,
   Loader,
   CheckCircle2,
   XCircle,
-  CalendarDays,
-  CalendarRange,
   PackageX,
 } from "lucide-react";
 import { requireAdmin } from "@/lib/auth/admin";
-import { getDashboardStats } from "@/lib/data/admin-stats";
+import { getDashboardStats, getOrdersInRange } from "@/lib/data/admin-stats";
+import { resolveRange } from "@/lib/analytics/range";
 import { formatUSD } from "@/lib/formatPrice";
 import { orderStatusLabel, orderStatusStyle } from "@/lib/orders/status";
+import OrdersRangeCard from "@/components/admin/OrdersRangeCard";
+
+// Default range for the filterable Orders card on first load.
+const DEFAULT_ORDERS_PRESET = "month";
 
 export default async function AdminDashboardPage() {
   const user = await requireAdmin();
-  const stats = await getDashboardStats();
+  const defaultRange = resolveRange(DEFAULT_ORDERS_PRESET);
+  const [stats, initialOrders] = await Promise.all([
+    getDashboardStats(),
+    getOrdersInRange(defaultRange.startISO, defaultRange.endISO),
+  ]);
 
   const firstName =
     (user.user_metadata?.first_name as string | undefined) ||
@@ -40,17 +46,23 @@ export default async function AdminDashboardPage() {
         Here&apos;s how your YOYOSO store is doing.
       </p>
 
-      {/* Orders by status */}
-      <h2 className="mt-6 text-xs font-bold uppercase tracking-wide text-text-secondary">
-        Orders
-      </h2>
-      <div className="mt-3 grid auto-rows-fr grid-cols-2 gap-4 lg:grid-cols-4">
-        <StatCard
-          icon={<ClipboardList size={20} />}
-          label="Total orders"
-          value={stats.orders.total}
-          href="/admin/orders"
+      {/* Orders — filterable count + revenue (replaces today / this-month / total) */}
+      <div className="mt-6">
+        <OrdersRangeCard
+          initial={{
+            preset: DEFAULT_ORDERS_PRESET,
+            count: initialOrders.count,
+            revenue: initialOrders.revenue,
+            label: defaultRange.label,
+          }}
         />
+      </div>
+
+      {/* Orders by status */}
+      <h2 className="mt-7 text-xs font-bold uppercase tracking-wide text-text-secondary">
+        By status
+      </h2>
+      <div className="mt-3 grid auto-rows-fr grid-cols-1 gap-4 sm:grid-cols-3">
         <StatCard
           icon={<Clock size={20} />}
           label="Pending"
@@ -71,23 +83,6 @@ export default async function AdminDashboardPage() {
           value={stats.orders.delivered}
           href="/admin/orders?status=delivered"
           tone="green"
-        />
-      </div>
-
-      {/* Activity */}
-      <h2 className="mt-7 text-xs font-bold uppercase tracking-wide text-text-secondary">
-        Activity
-      </h2>
-      <div className="mt-3 grid auto-rows-fr grid-cols-2 gap-4">
-        <StatCard
-          icon={<CalendarDays size={20} />}
-          label="Orders today"
-          value={stats.orders.today}
-        />
-        <StatCard
-          icon={<CalendarRange size={20} />}
-          label="Orders this month"
-          value={stats.orders.month}
         />
       </div>
 
