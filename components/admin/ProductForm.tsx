@@ -40,6 +40,7 @@ const EMPTY: AdminProductInput = {
   badge: "",
   inStock: true,
   hideNewBadge: false,
+  searchKeywords: "",
   colors: [],
   models: [],
   sizes: [],
@@ -127,6 +128,26 @@ export default function ProductForm({
       colors.map((c) => (c.value === name ? { ...c, image: url } : c)),
       { shouldDirty: true },
     );
+  };
+
+  // Custom (non-preset) color: the admin types a name + picks any shade.
+  const [customName, setCustomName] = useState("");
+  const [customHex, setCustomHex] = useState("#1BA89B");
+  const addCustomColor = () => {
+    const name = customName.trim();
+    if (!name) return;
+    // Ignore a duplicate name (preset or custom) — keep the existing one.
+    if (colors.some((c) => c.value.toLowerCase() === name.toLowerCase())) {
+      setCustomName("");
+      return;
+    }
+    setValue(
+      "colors",
+      [...colors, { value: name, colorHex: customHex, image: "" }],
+      { shouldValidate: true, shouldDirty: true },
+    );
+    setCustomName("");
+    setCustomHex("#1BA89B");
   };
 
   const selectedCategoryId = watch("categoryId");
@@ -309,6 +330,24 @@ export default function ProductForm({
           </div>
         </div>
 
+        {/* Search keywords (admin-only; powers site search, not shown to customers) */}
+        <div className="mt-4">
+          <Label htmlFor="searchKeywords" hint="(optional — for search only)">
+            Search keywords
+          </Label>
+          <input
+            id="searchKeywords"
+            {...register("searchKeywords")}
+            placeholder="e.g. coffee, cup, gift, kitchen"
+            className={inputCls}
+          />
+          <p className="mt-1 text-xs text-text-secondary">
+            Comma-separated extra words shoppers might search by. Not shown on the
+            product page — it only helps this product surface in search.
+          </p>
+          <FieldError msg={errors.searchKeywords?.message} />
+        </div>
+
         {/* In-stock toggle */}
         <div className="mt-4 flex items-center justify-between rounded-button border border-border bg-surface px-4 py-3">
           <div>
@@ -362,9 +401,10 @@ export default function ProductForm({
         <div className="mb-6">
           <h3 className="mb-1 text-sm font-bold text-text-primary">Colors</h3>
           <p className="mb-3 text-xs text-text-secondary">
-            Click a color to add it; click it again (or use Remove below) to take
-            it off. Optionally assign one of the product&apos;s images to a color
-            so the storefront photo switches when it&apos;s selected.
+            Quick-pick a preset color, or add a custom color below. Click a color
+            again (or use Remove below) to take it off. Optionally assign one of
+            the product&apos;s images to a color so the storefront photo switches
+            when it&apos;s selected.
           </p>
 
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
@@ -391,6 +431,46 @@ export default function ProductForm({
                 </button>
               );
             })}
+          </div>
+
+          {/* Add a custom color: name + any shade */}
+          <div className="mt-3 rounded-card border border-dashed border-border bg-surface/40 p-3">
+            <p className="mb-2 text-xs font-semibold text-text-secondary">
+              Add a custom color
+            </p>
+            <div className="flex flex-wrap items-center gap-2">
+              <input
+                type="color"
+                value={customHex}
+                onChange={(e) => setCustomHex(e.target.value)}
+                aria-label="Custom color shade"
+                title="Pick a shade"
+                className="h-9 w-12 shrink-0 cursor-pointer rounded-button border border-border bg-white p-1"
+              />
+              <input
+                type="text"
+                value={customName}
+                onChange={(e) => setCustomName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    addCustomColor();
+                  }
+                }}
+                maxLength={40}
+                placeholder="Color name (e.g. Teal, Rose Gold)"
+                className={`${inputCls} min-w-0 flex-1`}
+              />
+              <button
+                type="button"
+                onClick={addCustomColor}
+                disabled={!customName.trim()}
+                className="inline-flex shrink-0 items-center gap-1.5 rounded-button border border-border px-3 py-2 text-sm font-semibold text-primary transition-colors hover:bg-primary/5 disabled:opacity-50"
+              >
+                <Plus size={15} />
+                Add
+              </button>
+            </div>
           </div>
 
           {/* Selected colors — remove + optional image per color */}

@@ -87,7 +87,7 @@ export default function PrivacyPolicyPage() {
                 "To fulfill and manage your orders, including delivery coordination",
                 "To communicate with you about your orders and respond to your inquiries",
                 "To improve our website, products, and customer service",
-                "To handle returns, refunds, and warranty claims",
+                "To handle returns, exchanges, and warranty claims",
                 "To send you marketing communications (only with your consent)",
                 "To operate CCTV in our physical stores for security purposes",
                 "To comply with legal obligations",

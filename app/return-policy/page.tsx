@@ -3,9 +3,9 @@ import Link from "next/link";
 import { MessageCircle } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "Return & Refund Policy | YOYOSO",
+  title: "Return & Exchange Policy | YOYOSO",
   description:
-    "YOYOSO Lebanon's return and refund policy — 14-day returns on unused items, store credit refunds within 3–5 working days.",
+    "YOYOSO Lebanon's return and exchange policy — 14-day returns on unused items for exchange or store credit only (no cash refunds).",
 };
 
 const WA_URL = "https://wa.me/96103133307";
@@ -26,10 +26,10 @@ export default function ReturnPolicyPage() {
               Home
             </Link>
             <span>/</span>
-            <span className="text-white">Return &amp; Refund Policy</span>
+            <span className="text-white">Return &amp; Exchange Policy</span>
           </nav>
           <h1 className="font-heading text-3xl font-bold sm:text-4xl">
-            Return &amp; Refund Policy
+            Return &amp; Exchange Policy
           </h1>
         </div>
       </div>
@@ -134,19 +134,13 @@ export default function ReturnPolicyPage() {
 
           <section>
             <h2 className="font-heading text-xl font-bold text-primary">
-              Refunds
+              Exchange or Store Credit
             </h2>
             <p className="mt-3 text-text-secondary">
-              Once your return is received and inspected, we will notify you of the approval or rejection of your refund.
+              We do <strong className="text-text-primary">not</strong> offer cash refunds. Once your return is received and inspected, approved items are either <strong className="text-text-primary">exchanged</strong> for another product or issued as <strong className="text-text-primary">store credit</strong> of equal value.
             </p>
-          </section>
-
-          <section>
-            <h2 className="font-heading text-xl font-bold text-primary">
-              Exchanges
-            </h2>
             <p className="mt-3 text-text-secondary">
-              If you would like to exchange an item for a different product, please contact us on WhatsApp and we will be happy to assist you.
+              Store credit can be used towards any future purchase. If you would like to exchange an item for a different product, contact us on WhatsApp and our team will be happy to assist you.
             </p>
           </section>
 

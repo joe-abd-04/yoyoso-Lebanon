@@ -76,7 +76,7 @@ function helpSection(whatsappUrl: string): FooterSection {
       { label: "Contact Us", href: "/contact" },
       { label: "WhatsApp Support", href: whatsappUrl, external: true },
       { label: "Shipping Policy", href: "/shipping-policy" },
-      { label: "Return & Refund", href: "/return-policy" },
+      { label: "Return & Exchange", href: "/return-policy" },
       { label: "Privacy Policy", href: "/privacy-policy" },
       { label: "Terms & Conditions", href: "/terms" },
     ],

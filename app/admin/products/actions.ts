@@ -33,6 +33,27 @@ export type ProductActionResult =
 
 type DB = SupabaseClient<Database>;
 
+/**
+ * Parse the comma-separated "Search keywords" field into a clean tag list:
+ * trimmed, de-duplicated (case-insensitive), empties dropped, and capped. Stored
+ * in products.tags, which the site search (Fuse.js) already indexes.
+ */
+function parseKeywords(raw: string | undefined): string[] {
+  if (!raw) return [];
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const part of raw.split(",")) {
+    const k = part.trim().slice(0, 50);
+    if (!k) continue;
+    const key = k.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(k);
+    if (out.length >= 40) break;
+  }
+  return out;
+}
+
 /** Turn a product name into a URL-safe slug base. */
 function slugify(name: string): string {
   return (
@@ -115,6 +136,8 @@ function buildDbFields(data: AdminProductInput) {
     variants,
     images,
     thumbnail,
+    // Manual search keywords → tags column (indexed by the site search).
+    tags: parseKeywords(data.searchKeywords),
   };
 }
 
@@ -239,7 +262,7 @@ export async function createProduct(
     is_featured: false,
     is_best_seller: false,
     stock_count: null,
-    tags: [],
+    // tags come from buildDbFields (parsed search keywords).
     // created_at defaults to now() in the DB, so New Arrivals + the NEW badge work.
   };
 
@@ -342,4 +365,67 @@ export async function deleteProduct(id: string): Promise<ProductActionResult> {
 
   revalidateStorefront();
   return { ok: true, id };
+}
+
+// ── Bulk delete (products list) ──────────────────────────────────────────────
+// Mirrors the orders bulk delete + single deleteProduct's image cleanup.
+
+export type ProductBulkResult =
+  | { ok: true; count: number }
+  | { ok: false; error: string };
+
+const MAX_BULK = 500;
+
+/** Validate + de-duplicate the selected id list. */
+function cleanIds(ids: unknown): string[] {
+  if (!Array.isArray(ids)) return [];
+  const out = new Set<string>();
+  for (const id of ids) {
+    if (typeof id === "string" && id) out.add(id);
+    if (out.size >= MAX_BULK) break;
+  }
+  return [...out];
+}
+
+/** Permanently delete many products at once (admin-verified, service-role). */
+export async function bulkDeleteProducts(
+  ids: string[],
+): Promise<ProductBulkResult> {
+  const admin = await getAdminUser();
+  if (!admin) return { ok: false, error: "You are not authorized to do that." };
+
+  const list = cleanIds(ids);
+  if (list.length === 0) return { ok: false, error: "No products selected." };
+
+  const supabase = createServerClient();
+
+  // Grab image URLs first so we can clean up storage after the rows are gone.
+  const { data: rows, error: readErr } = await supabase
+    .from("products")
+    .select("images")
+    .in("id", list);
+  if (readErr) {
+    console.error("[bulkDeleteProducts] read", readErr.message);
+    return {
+      ok: false,
+      error: "Could not delete the selected products. Please try again.",
+    };
+  }
+
+  const { error } = await supabase.from("products").delete().in("id", list);
+  if (error) {
+    console.error("[bulkDeleteProducts]", error.message);
+    return {
+      ok: false,
+      error: "Could not delete the selected products. Please try again.",
+    };
+  }
+
+  // Orphan cleanup: remove the deleted products' images from the bucket
+  // (best-effort, same as single delete).
+  const allImages = (rows ?? []).flatMap((r) => r.images ?? []);
+  if (allImages.length > 0) await deleteStorageImages(supabase, allImages);
+
+  revalidateStorefront();
+  return { ok: true, count: list.length };
 }

@@ -49,7 +49,7 @@ const FAQS = [
   },
   {
     q: "What is your return policy?",
-    a: "We accept returns within 14 days of delivery. Items must be unused, in original condition, and in original packaging with all tags intact.",
+    a: "We accept returns within 14 days of delivery for exchange or store credit only — we don't offer cash refunds. Items must be unused, in original condition, and in original packaging with all tags intact.",
   },
   {
     q: "What payment methods do you accept?",

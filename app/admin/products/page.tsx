@@ -1,7 +1,5 @@
 import Link from "next/link";
-import { Plus, Pencil, Copy, ChevronLeft, ChevronRight, PackageOpen } from "lucide-react";
-
-const FOURTEEN_DAYS_MS = 14 * 24 * 60 * 60 * 1000;
+import { Plus, ChevronLeft, ChevronRight, PackageOpen } from "lucide-react";
 import { requireAdmin } from "@/lib/auth/admin";
 import {
   listAdminProducts,
@@ -9,13 +7,9 @@ import {
   type StockFilter,
 } from "@/lib/data/admin-products";
 import ProductsToolbar from "@/components/admin/ProductsToolbar";
-import DeleteProductButton from "@/components/admin/DeleteProductButton";
+import ProductsTable from "@/components/admin/ProductsTable";
 
 const STOCK_VALUES: StockFilter[] = ["all", "in", "out"];
-
-function fmtUSD(n: number): string {
-  return `$${n.toFixed(2)}`;
-}
 
 function buildHref(
   base: { q?: string; category?: string; stock?: string },
@@ -104,112 +98,7 @@ export default async function AdminProductsPage({
           </p>
         </div>
       ) : (
-        <div className="mt-6 overflow-hidden rounded-card border border-border bg-white shadow-sm">
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[760px] text-left text-sm">
-              <thead>
-                <tr className="border-b border-border bg-surface text-xs uppercase tracking-wide text-text-secondary">
-                  <th className="px-4 py-3 font-semibold">Product</th>
-                  <th className="px-4 py-3 font-semibold">Category</th>
-                  <th className="px-4 py-3 font-semibold">Price</th>
-                  <th className="px-4 py-3 font-semibold">Stock</th>
-                  <th className="px-4 py-3 font-semibold">Badge</th>
-                  <th className="px-4 py-3 text-right font-semibold">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {items.map((p) => (
-                  <tr
-                    key={p.id}
-                    className="border-b border-border last:border-0 hover:bg-surface/60"
-                  >
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-3">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src={p.thumbnail}
-                          alt={p.name}
-                          className="h-11 w-11 shrink-0 rounded-lg border border-border object-cover"
-                        />
-                        <span className="font-semibold text-text-primary">
-                          {p.name}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-text-secondary">
-                      {p.categoryName}
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className="font-semibold text-text-primary">
-                        {fmtUSD(p.priceUSD)}
-                      </span>
-                      {p.originalPriceUSD && p.originalPriceUSD > p.priceUSD && (
-                        <span className="ml-1.5 text-xs text-text-secondary line-through">
-                          {fmtUSD(p.originalPriceUSD)}
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3">
-                      {p.inStock ? (
-                        <span className="inline-flex items-center rounded-badge bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary-dark">
-                          In stock
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center rounded-badge bg-accent/10 px-2.5 py-0.5 text-xs font-semibold text-accent">
-                          Out of stock
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3">
-                      {(() => {
-                        const autoNew =
-                          !p.hideNewBadge &&
-                          Date.now() - new Date(p.createdAt).getTime() <= FOURTEEN_DAYS_MS;
-                        const hasAny = autoNew || p.badge;
-                        return hasAny ? (
-                          <div className="flex flex-wrap gap-1">
-                            {autoNew && (
-                              <span className="inline-flex items-center rounded-badge bg-primary/15 px-2.5 py-0.5 text-xs font-semibold text-primary-dark">
-                                NEW
-                              </span>
-                            )}
-                            {p.badge && (
-                              <span className="inline-flex items-center rounded-badge bg-text-primary/5 px-2.5 py-0.5 text-xs font-semibold text-text-primary">
-                                {p.badge}
-                              </span>
-                            )}
-                          </div>
-                        ) : (
-                          <span className="text-text-secondary">—</span>
-                        );
-                      })()}
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center justify-end gap-1">
-                        <Link
-                          href={`/admin/products/${p.id}/edit`}
-                          aria-label={`Edit ${p.name}`}
-                          className="rounded-button p-2 text-text-secondary transition-colors hover:bg-primary/10 hover:text-primary"
-                        >
-                          <Pencil size={16} />
-                        </Link>
-                        <Link
-                          href={`/admin/products/new?from=${p.id}`}
-                          aria-label={`Duplicate ${p.name}`}
-                          title="Duplicate"
-                          className="rounded-button p-2 text-text-secondary transition-colors hover:bg-primary/10 hover:text-primary"
-                        >
-                          <Copy size={16} />
-                        </Link>
-                        <DeleteProductButton id={p.id} name={p.name} />
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
+        <ProductsTable items={items} />
       )}
 
       {/* Pagination */}

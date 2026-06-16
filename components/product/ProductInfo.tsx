@@ -232,8 +232,7 @@ export default function ProductInfo({
         <ProductAccordion title="Delivery & Returns">
           <ul className="list-disc space-y-1.5 pl-5">
             <li>Delivery: 4 working days across Lebanon</li>
-            <li>WhatsApp us to confirm your delivery area</li>
-            <li>Returns accepted within 7 days</li>
+            <li>Exchange or store credit within 14 days (no cash refunds)</li>
             <li>Items must be unused and in original packaging</li>
           </ul>
         </ProductAccordion>

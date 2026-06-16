@@ -314,9 +314,9 @@ const variantImage = z
   .refine((v) => v === "" || isSafeImageUrl(v), "Invalid image URL")
   .optional();
 
-// Color options carry a name (from the fixed palette) + its known hex swatch,
-// plus an optional image. Models carry a label + optional image. Sizes are
-// just labels.
+// Color options carry a name + a hex swatch (either a preset from the palette
+// OR a custom color the admin names and picks a shade for), plus an optional
+// image. Models carry a label + optional image. Sizes are just labels.
 export const colorVariantSchema = z.object({
   value: z.string().trim().min(1, "Color name is required").max(40, "Too long"),
   colorHex: z.string().regex(/^#[0-9a-fA-F]{6}$/, "Pick a color"),
@@ -364,6 +364,10 @@ export const adminProductSchema = z
     badge: z.enum(BADGE_OPTIONS),
     inStock: z.boolean(),
     hideNewBadge: z.boolean(),
+    // Free-text, comma-separated extra search terms (admin-only; not shown to
+    // customers). The server splits these into the products.tags array, which
+    // the site search (Fuse.js) already indexes.
+    searchKeywords: z.string().trim().max(500, "Keywords are too long"),
     // Three optional, independent variant groups. A product may use any
     // combination (or none). Stored together in the products.variants jsonb.
     colors: z.array(colorVariantSchema).max(30, "Too many colors"),
