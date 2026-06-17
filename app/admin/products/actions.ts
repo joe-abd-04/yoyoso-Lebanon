@@ -450,8 +450,10 @@ const suggestSchema = z.object({
   description: z.string().trim().max(5000),
 });
 
-/** Robustly pull a clean keyword list out of the model's reply (JSON array or
- *  comma/newline list, possibly wrapped in markdown / numbering / quotes). */
+/** Robustly pull a clean SINGLE-WORD keyword list out of the model's reply
+ *  (JSON array or comma/newline list, possibly wrapped in markdown / numbering /
+ *  quotes). Safety net: any multi-word entry is split into individual words so
+ *  phrases like "funny socks" become "funny" + "socks". Lowercased + de-duped. */
 function parseAIKeywords(raw: string): string[] {
   if (!raw) return [];
   const text = raw.replace(/```(?:json)?/gi, "").trim();
@@ -471,16 +473,19 @@ function parseAIKeywords(raw: string): string[] {
   const seen = new Set<string>();
   const out: string[] = [];
   for (const part of parts) {
-    const k = part
-      .replace(/^[\s\-*•\d.)"'`]+/, "")
-      .replace(/["'`]+$/, "")
-      .trim()
-      .toLowerCase()
-      .slice(0, 40);
-    if (k.length < 2) continue;
-    if (seen.has(k)) continue;
-    seen.add(k);
-    out.push(k);
+    // Split every entry on whitespace → single words only (no phrases).
+    for (const rawWord of part.split(/\s+/)) {
+      const w = rawWord
+        .toLowerCase()
+        .replace(/^[^a-z0-9]+/, "") // strip leading punctuation/bullets/numbering
+        .replace(/[^a-z0-9]+$/, "") // strip trailing punctuation
+        .slice(0, 40);
+      if (w.length < 2) continue;
+      if (seen.has(w)) continue;
+      seen.add(w);
+      out.push(w);
+      if (out.length >= 10) break;
+    }
     if (out.length >= 10) break;
   }
   return out;
@@ -528,13 +533,13 @@ export async function suggestKeywords(input: {
           {
             role: "system",
             content:
-              "You generate concise e-commerce search keywords. Reply with ONLY a comma-separated list of 5-10 short lowercase keywords or synonyms a shopper might type to find the product. No explanations, no numbering, no hashtags.",
+              "You generate concise e-commerce search keywords. Reply with ONLY a comma-separated list of 5-10 SINGLE-WORD lowercase keywords or synonyms a shopper might type to find the product. Each keyword MUST be exactly one word — no spaces, no multi-word phrases (e.g. use \"socks\" and \"funny\" separately, never \"funny socks\"). No explanations, no numbering, no hashtags.",
           },
           {
             role: "user",
             content: `Product name: ${name}\nDescription: ${
               description || "(none provided)"
-            }\n\nGive 5-10 lowercase search keywords for this product.`,
+            }\n\nGive 5-10 single-word lowercase search keywords for this product. One word each — no phrases.`,
           },
         ],
       }),
