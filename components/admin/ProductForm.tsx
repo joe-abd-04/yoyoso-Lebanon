@@ -10,7 +10,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Plus, Trash2, AlertCircle, Check } from "lucide-react";
+import { Plus, Trash2, AlertCircle, Check, Sparkles, Loader2 } from "lucide-react";
 import {
   adminProductSchema,
   PRODUCT_BADGES,
@@ -18,7 +18,11 @@ import {
 } from "@/lib/validation";
 import { NAMED_COLORS } from "@/lib/products/colors";
 import type { CategoryOption } from "@/lib/data/admin-products";
-import { createProduct, updateProduct } from "@/app/admin/products/actions";
+import {
+  createProduct,
+  updateProduct,
+  suggestKeywords,
+} from "@/app/admin/products/actions";
 import { useUIStore } from "@/store/uiStore";
 import ProductImageUploader from "@/components/admin/ProductImageUploader";
 
@@ -94,11 +98,48 @@ export default function ProductForm({
     control,
     watch,
     setValue,
+    getValues,
     formState: { errors, isSubmitting },
   } = useForm<AdminProductInput>({
     resolver: zodResolver(adminProductSchema),
     defaultValues: initial ?? EMPTY,
   });
+
+  // AI keyword suggestions (optional; manual field works without it).
+  const [aiLoading, setAiLoading] = useState(false);
+  const handleSuggestKeywords = async () => {
+    const name = (getValues("name") || "").trim();
+    const description = (getValues("description") || "").trim();
+    if (name.length < 2) {
+      showToast("Add a product name (and description) first.", "error");
+      return;
+    }
+    setAiLoading(true);
+    const res = await suggestKeywords({ name, description });
+    setAiLoading(false);
+    if (!res.ok) {
+      showToast(res.error, "error");
+      return;
+    }
+    // Append suggestions to whatever's already typed, de-duplicated.
+    const existing = (getValues("searchKeywords") || "")
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+    const seen = new Set(existing.map((s) => s.toLowerCase()));
+    const merged = [...existing];
+    for (const k of res.keywords) {
+      if (!seen.has(k.toLowerCase())) {
+        seen.add(k.toLowerCase());
+        merged.push(k);
+      }
+    }
+    setValue("searchKeywords", merged.join(", "), {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
+    showToast("Keywords suggested — review and edit before saving.", "success");
+  };
 
   const modelArray = useFieldArray({ control, name: "models" });
   const sizeArray = useFieldArray({ control, name: "sizes" });
@@ -332,9 +373,30 @@ export default function ProductForm({
 
         {/* Search keywords (admin-only; powers site search, not shown to customers) */}
         <div className="mt-4">
-          <Label htmlFor="searchKeywords" hint="(optional — for search only)">
-            Search keywords
-          </Label>
+          <div className="mb-1.5 flex items-center justify-between gap-2">
+            <label
+              htmlFor="searchKeywords"
+              className="text-sm font-semibold text-text-primary"
+            >
+              Search keywords{" "}
+              <span className="font-normal text-text-secondary">
+                (optional — for search only)
+              </span>
+            </label>
+            <button
+              type="button"
+              onClick={handleSuggestKeywords}
+              disabled={aiLoading}
+              className="inline-flex shrink-0 items-center gap-1.5 rounded-button border border-border px-2.5 py-1 text-xs font-semibold text-primary transition-colors hover:bg-primary/5 disabled:opacity-60"
+            >
+              {aiLoading ? (
+                <Loader2 size={14} className="animate-spin" />
+              ) : (
+                <Sparkles size={14} />
+              )}
+              {aiLoading ? "Suggesting…" : "Suggest with AI"}
+            </button>
+          </div>
           <input
             id="searchKeywords"
             {...register("searchKeywords")}

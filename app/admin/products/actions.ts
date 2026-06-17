@@ -12,6 +12,7 @@
 //   • After a successful write we revalidate the storefront so changes appear on
 //     the live site (which is otherwise statically cached).
 
+import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { getAdminUser } from "@/lib/auth/admin";
 import { createServerClient } from "@/lib/supabase/server";
@@ -428,4 +429,148 @@ export async function bulkDeleteProducts(
 
   revalidateStorefront();
   return { ok: true, count: list.length };
+}
+
+// ── AI keyword suggestions (Groq) ────────────────────────────────────────────
+// Optional helper for the product form's "Search keywords" field. Sends only the
+// product NAME + DESCRIPTION (no image, nothing sensitive) to Groq's
+// OpenAI-compatible chat API and parses back a short list of lowercase search
+// keywords. Admin-only, zod-validated, fails soft (the manual field always works).
+
+// Groq free-tier model. Fast + cheap; swap if Groq deprecates it.
+const GROQ_MODEL = "llama-3.1-8b-instant";
+const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
+
+export type SuggestKeywordsResult =
+  | { ok: true; keywords: string[] }
+  | { ok: false; error: string };
+
+const suggestSchema = z.object({
+  name: z.string().trim().min(1).max(150),
+  description: z.string().trim().max(5000),
+});
+
+/** Robustly pull a clean keyword list out of the model's reply (JSON array or
+ *  comma/newline list, possibly wrapped in markdown / numbering / quotes). */
+function parseAIKeywords(raw: string): string[] {
+  if (!raw) return [];
+  const text = raw.replace(/```(?:json)?/gi, "").trim();
+
+  let parts: string[] = [];
+  const arr = text.match(/\[[\s\S]*\]/);
+  if (arr) {
+    try {
+      const json = JSON.parse(arr[0]);
+      if (Array.isArray(json)) parts = json.map((v) => String(v));
+    } catch {
+      // not valid JSON — fall through to delimiter splitting
+    }
+  }
+  if (parts.length === 0) parts = text.split(/[,\n]/);
+
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const part of parts) {
+    const k = part
+      .replace(/^[\s\-*•\d.)"'`]+/, "")
+      .replace(/["'`]+$/, "")
+      .trim()
+      .toLowerCase()
+      .slice(0, 40);
+    if (k.length < 2) continue;
+    if (seen.has(k)) continue;
+    seen.add(k);
+    out.push(k);
+    if (out.length >= 10) break;
+  }
+  return out;
+}
+
+export async function suggestKeywords(input: {
+  name: string;
+  description: string;
+}): Promise<SuggestKeywordsResult> {
+  if (!(await getAdminUser())) {
+    return { ok: false, error: "You are not authorized to do that." };
+  }
+
+  const parsed = suggestSchema.safeParse(input);
+  if (!parsed.success) {
+    return { ok: false, error: "Add a product name first, then try again." };
+  }
+
+  const apiKey = process.env.GROQ_API_KEY;
+  if (!apiKey) {
+    return {
+      ok: false,
+      error: "AI suggestions aren't configured. You can add keywords manually.",
+    };
+  }
+
+  const { name, description } = parsed.data;
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 15000);
+  try {
+    const res = await fetch(GROQ_URL, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        authorization: `Bearer ${apiKey}`,
+      },
+      cache: "no-store",
+      signal: controller.signal,
+      body: JSON.stringify({
+        model: GROQ_MODEL,
+        temperature: 0.3,
+        max_tokens: 120,
+        messages: [
+          {
+            role: "system",
+            content:
+              "You generate concise e-commerce search keywords. Reply with ONLY a comma-separated list of 5-10 short lowercase keywords or synonyms a shopper might type to find the product. No explanations, no numbering, no hashtags.",
+          },
+          {
+            role: "user",
+            content: `Product name: ${name}\nDescription: ${
+              description || "(none provided)"
+            }\n\nGive 5-10 lowercase search keywords for this product.`,
+          },
+        ],
+      }),
+    });
+
+    if (!res.ok) {
+      console.error("[suggestKeywords] Groq HTTP", res.status);
+      if (res.status === 429) {
+        return { ok: false, error: "AI is busy right now — try again in a moment." };
+      }
+      return { ok: false, error: "Couldn't get suggestions right now. Please try again." };
+    }
+
+    const data = (await res.json()) as {
+      choices?: { message?: { content?: string } }[];
+    };
+    const content = data.choices?.[0]?.message?.content ?? "";
+    const keywords = parseAIKeywords(content);
+
+    if (keywords.length === 0) {
+      return {
+        ok: false,
+        error: "No suggestions came back. Add more detail, or type keywords manually.",
+      };
+    }
+    return { ok: true, keywords };
+  } catch (err) {
+    const aborted = err instanceof Error && err.name === "AbortError";
+    console.error("[suggestKeywords]", err);
+    return {
+      ok: false,
+      error: aborted
+        ? "The AI took too long. Please try again."
+        : "Couldn't reach the AI service. Please try again.",
+    };
+  } finally {
+    clearTimeout(timeout);
+  }
 }
