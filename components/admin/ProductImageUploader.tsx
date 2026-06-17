@@ -2,8 +2,9 @@
 
 // Admin product image uploader.
 //
-// Flow: the admin picks one or more image files → each is compressed & resized
-// CLIENT-SIDE (browser-image-compression → webp, ~1200px long edge, ≤300KB) →
+// Flow: the admin picks one or more image files → each is processed CLIENT-SIDE
+// into a square webp with a blurred-fill background (the whole photo is kept,
+// never cropped — see lib/images/squareImage.ts), ~1000px, ≤300KB →
 // uploaded straight to the public "product-images" Supabase Storage bucket using
 // the admin's OWN session (Storage RLS allows insert only when is_admin()). We
 // never ship the service-role key to the browser and never push big files
@@ -16,7 +17,7 @@
 // image as the main.
 
 import { useId, useRef, useState } from "react";
-import imageCompression from "browser-image-compression";
+import { compressToSquareWebp } from "@/lib/images/squareImage";
 import {
   ImagePlus,
   Loader2,
@@ -51,14 +52,6 @@ const ACCEPTED_TYPES = new Set([
 ]);
 // Max size of the ORIGINAL file the user drops in (before compression).
 const MAX_INPUT_BYTES = 15 * 1024 * 1024; // 15 MB
-
-const COMPRESSION_OPTIONS = {
-  maxSizeMB: 0.3, // ≈300KB ceiling
-  maxWidthOrHeight: 1200, // long edge
-  useWebWorker: true,
-  fileType: "image/webp" as const,
-  initialQuality: 0.82,
-};
 
 export default function ProductImageUploader({
   images,
@@ -128,9 +121,11 @@ export default function ProductImageUploader({
         const file = toUpload[i];
         let blob: Blob;
         try {
-          blob = await imageCompression(file, COMPRESSION_OPTIONS);
+          // Square webp with a blurred-fill background — the whole image is kept
+          // (never cropped). See lib/images/squareImage.ts.
+          blob = await compressToSquareWebp(file);
         } catch {
-          // If compression fails, skip this file rather than uploading the
+          // If processing fails, skip this file rather than uploading the
           // (potentially huge) original.
           setError(`Could not process "${file.name}". Skipped.`);
           setProgress({ done: i + 1, total: toUpload.length });
@@ -314,8 +309,9 @@ export default function ProductImageUploader({
                 : "Click to upload images"}
           </p>
           <p className="mt-1 max-w-sm text-xs text-text-secondary">
-            JPG, PNG, WEBP, GIF or AVIF up to 15 MB each. Images are auto-compressed
-            to webp (max ~1200px). The first / starred image is the thumbnail.
+            JPG, PNG, WEBP, GIF or AVIF up to 15 MB each. Images are fitted into a
+            square (whole photo kept — never cropped) with a blurred fill, and
+            compressed to webp. The first / starred image is the thumbnail.
           </p>
         </label>
       </div>

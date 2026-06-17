@@ -10,7 +10,7 @@
 // outbound link, plus reorder / remove.
 
 import { useId, useRef, useState, useTransition } from "react";
-import imageCompression from "browser-image-compression";
+import { compressToSquareWebp } from "@/lib/images/squareImage";
 import {
   Camera,
   ImagePlus,
@@ -44,13 +44,6 @@ const ACCEPTED_TYPES = new Set([
   "image/tiff",
 ]);
 const MAX_INPUT_BYTES = 15 * 1024 * 1024; // 15 MB
-const COMPRESSION_OPTIONS = {
-  maxSizeMB: 0.3,
-  maxWidthOrHeight: 1200,
-  useWebWorker: true,
-  fileType: "image/webp" as const,
-  initialQuality: 0.82,
-};
 
 export default function InstagramManager({
   initial,
@@ -114,7 +107,8 @@ export default function InstagramManager({
         const file = toUpload[i];
         let blob: Blob;
         try {
-          blob = await imageCompression(file, COMPRESSION_OPTIONS);
+          // Square webp with a blurred-fill background — whole image kept (no crop).
+          blob = await compressToSquareWebp(file);
         } catch {
           setUploadError(`Could not process "${file.name}". Skipped.`);
           setProgress({ done: i + 1, total: toUpload.length });
@@ -322,7 +316,8 @@ export default function InstagramManager({
                   : "Click to upload images"}
             </p>
             <p className="mt-1 text-xs text-text-secondary">
-              JPG, PNG, WEBP, GIF or AVIF up to 15 MB. Auto-compressed to webp.
+              JPG, PNG, WEBP, GIF or AVIF up to 15 MB. Fitted into a square (whole
+              image kept, never cropped) with a blurred fill, compressed to webp.
             </p>
           </label>
         </div>
