@@ -83,13 +83,19 @@ export default function HeroSection() {
 
   return (
     <section className="mx-auto w-full max-w-7xl px-4 pt-6 sm:px-8">
-      <div className="relative h-[300px] overflow-hidden rounded-2xl md:h-[460px]"
+      <div className="relative h-[300px] overflow-hidden rounded-3xl shadow-[0_24px_60px_-24px_rgba(27,168,155,0.6)] md:h-[460px]"
         style={{ background: slide.gradient }}>
 
-        {/* Animated background blob */}
+        {/* Soft light blob (top-right) + a second deeper one (bottom-left) for depth */}
         <div
           className="pointer-events-none absolute -right-20 -top-20 h-[300px] w-[300px] rounded-full blur-3xl md:h-[500px] md:w-[500px]"
           style={{ backgroundColor: slide.accentGlow }}
+        />
+        <div className="pointer-events-none absolute -bottom-24 -left-16 h-[260px] w-[260px] rounded-full bg-white/10 blur-3xl" />
+        {/* Subtle corner vignette — adds depth and keeps the text crisp. */}
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 bg-[radial-gradient(120%_120%_at_18%_0%,transparent_45%,rgba(0,0,0,0.16))]"
         />
 
         {/* Slide content */}
@@ -136,15 +142,15 @@ export default function HeroSection() {
               >
                 <Link
                   href={slide.primaryHref}
-                  className="inline-flex items-center gap-2 rounded-[10px] bg-white px-5 py-2.5 text-sm font-bold text-primary shadow-md transition-all duration-200 hover:scale-105 hover:shadow-lg md:px-6 md:py-3 md:text-base"
+                  className="group/btn inline-flex items-center gap-2 rounded-button bg-white px-5 py-2.5 text-sm font-bold text-primary-dark shadow-md transition-[transform,box-shadow] duration-200 [transition-timing-function:var(--ease-soft)] hover:-translate-y-0.5 hover:shadow-xl md:px-6 md:py-3 md:text-base"
                 >
                   {slide.cta}
-                  <ArrowRight size={16} />
+                  <ArrowRight size={16} className="transition-transform duration-200 group-hover/btn:translate-x-0.5" />
                 </Link>
                 {slide.secondaryCta && slide.secondaryHref && (
                   <Link
                     href={slide.secondaryHref}
-                    className="inline-flex items-center gap-1.5 rounded-[10px] border border-white/40 px-4 py-2.5 text-sm font-semibold text-white backdrop-blur-sm transition-all duration-200 hover:bg-white/15 md:px-5 md:py-3"
+                    className="inline-flex items-center gap-1.5 rounded-button border border-white/45 px-4 py-2.5 text-sm font-semibold text-white backdrop-blur-sm transition-[transform,background-color] duration-200 [transition-timing-function:var(--ease-soft)] hover:-translate-y-0.5 hover:bg-white/15 md:px-5 md:py-3"
                   >
                     {slide.secondaryCta}
                   </Link>
@@ -152,21 +158,20 @@ export default function HeroSection() {
               </motion.div>
             </div>
 
-            {/* Illustration — right */}
+            {/* Illustration — right: a layered "halo" of concentric rings around a
+                softly glowing icon. Reads more premium than a flat icon box. */}
             <div
               aria-hidden="true"
-              className="pointer-events-none hidden shrink-0 select-none md:flex"
+              className="pointer-events-none relative hidden h-44 w-44 shrink-0 select-none items-center justify-center md:flex"
             >
-              <div
-                className="flex h-40 w-40 items-center justify-center rounded-3xl"
-                style={{ backgroundColor: slide.illustrationColor }}
-              >
-                <slide.IllustrationIcon
-                  size={80}
-                  strokeWidth={1}
-                  className="text-white/70"
-                />
-              </div>
+              <span className="absolute inset-0 rounded-full border border-white/15" />
+              <span className="absolute inset-5 rounded-full border border-white/20" />
+              <span className="absolute inset-10 rounded-full bg-white/10 shadow-[inset_0_1px_12px_rgba(255,255,255,0.25)] backdrop-blur-sm" />
+              <slide.IllustrationIcon
+                size={62}
+                strokeWidth={1.25}
+                className="relative text-white/90 drop-shadow-[0_2px_8px_rgba(0,0,0,0.15)]"
+              />
             </div>
           </motion.div>
         </AnimatePresence>

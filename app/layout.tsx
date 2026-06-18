@@ -10,6 +10,7 @@ import HideOnAdmin from "@/components/layout/HideOnAdmin";
 import Toast from "@/components/shared/Toast";
 import RouteProgressBar from "@/components/shared/RouteProgressBar";
 import GoogleAnalytics from "@/components/analytics/GoogleAnalytics";
+import MotionProvider from "@/components/shared/MotionProvider";
 import { AuthProvider } from "@/components/shared/AuthProvider";
 import { CategoriesProvider } from "@/components/shared/CategoriesProvider";
 import { ProductsProvider } from "@/components/shared/ProductsProvider";
@@ -63,6 +64,7 @@ export default async function RootLayout({
       <body
         className={`${jakarta.variable} ${dmSans.variable} bg-surface text-text-primary antialiased`}
       >
+        <MotionProvider>
         <AuthProvider>
           <CategoriesProvider categories={categories}>
             <ProductsProvider products={products}>
@@ -87,6 +89,7 @@ export default async function RootLayout({
             </ProductsProvider>
           </CategoriesProvider>
         </AuthProvider>
+        </MotionProvider>
       </body>
     </html>
   );

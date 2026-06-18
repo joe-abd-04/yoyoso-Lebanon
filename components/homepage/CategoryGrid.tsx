@@ -33,7 +33,8 @@ export default function CategoryGrid() {
         transition={{ duration: 0.45, ease: "easeOut" }}
         className="text-center"
       >
-        <h2 className="font-heading text-[26px] font-extrabold tracking-tight text-text-primary sm:text-[32px]">
+        <p className="eyebrow">Browse</p>
+        <h2 className="mt-2 font-heading text-[26px] font-extrabold tracking-tight text-text-primary sm:text-[32px]">
           Shop by Category
         </h2>
         <p className="mt-2 text-sm text-text-secondary sm:text-base">
@@ -56,11 +57,11 @@ export default function CategoryGrid() {
             <motion.div key={cat.slug} variants={tileVariants}>
               <Link
                 href={`/category/${cat.slug}`}
-                className="group flex flex-col items-center gap-2.5 rounded-2xl bg-white p-3.5 text-center shadow-[0_2px_10px_rgba(0,0,0,0.06)] transition-all duration-250 hover:-translate-y-1 hover:shadow-[0_10px_28px_rgba(0,0,0,0.10)] sm:gap-3 sm:p-5"
+                className="group flex flex-col items-center gap-2.5 rounded-2xl bg-white p-3.5 text-center shadow-soft ring-1 ring-[#1F2A2A]/[0.04] transition-[transform,box-shadow] duration-300 [transition-timing-function:var(--ease-soft)] hover:-translate-y-1.5 hover:shadow-lift sm:gap-3 sm:p-5"
               >
                 {/* Icon container */}
                 <div
-                  className="flex h-11 w-11 items-center justify-center rounded-xl transition-transform duration-250 group-hover:scale-110 sm:h-13 sm:w-13 sm:rounded-2xl"
+                  className="flex h-11 w-11 items-center justify-center rounded-xl transition-transform duration-300 [transition-timing-function:var(--ease-soft)] group-hover:scale-110 sm:h-13 sm:w-13 sm:rounded-2xl"
                   style={{ backgroundColor: def?.bgTint ?? "#EEFBF9" }}
                 >
                   {Icon && (
@@ -90,10 +91,10 @@ export default function CategoryGrid() {
       >
         <Link
           href="/category"
-          className="inline-flex items-center gap-2 rounded-button border border-border bg-white px-6 py-2.5 text-sm font-semibold text-primary shadow-sm transition-all duration-200 hover:border-primary hover:shadow-md"
+          className="group inline-flex items-center gap-2 rounded-button border border-border bg-white px-6 py-2.5 text-sm font-semibold text-primary-dark shadow-soft transition-[transform,box-shadow,border-color] duration-200 [transition-timing-function:var(--ease-soft)] hover:-translate-y-0.5 hover:border-primary hover:shadow-card"
         >
           View All Categories
-          <ArrowRight size={15} />
+          <ArrowRight size={15} className="transition-transform duration-200 group-hover:translate-x-0.5" />
         </Link>
       </motion.div>
     </section>

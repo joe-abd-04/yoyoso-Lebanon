@@ -154,7 +154,12 @@ export default function Footer() {
   const supportWhatsAppUrl = buildSupportWhatsAppUrl(contact.whatsapp);
   const HELP_SECTION = helpSection(supportWhatsAppUrl);
   return (
-    <footer className="mt-16 border-t border-border bg-card">
+    <footer className="mt-16 bg-card">
+      {/* Brand keyline — a thin teal gradient finishing the page. */}
+      <div
+        aria-hidden="true"
+        className="h-0.5 w-full bg-gradient-to-r from-primary via-primary-dark to-primary"
+      />
       <div className="mx-auto max-w-7xl px-4 py-12">
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-4">
           {/* ── Section 1: Brand ── */}
@@ -180,7 +185,7 @@ export default function Footer() {
                 href={siteConfig.contact.facebook}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="rounded-button border border-border p-2 text-text-secondary transition-colors hover:border-primary hover:text-primary"
+                className="rounded-button border border-border p-2 text-text-secondary transition-[transform,color,border-color,background-color] duration-200 [transition-timing-function:var(--ease-soft)] hover:-translate-y-0.5 hover:border-primary hover:bg-primary/5 hover:text-primary"
                 aria-label="YOYOSO on Facebook"
               >
                 <FacebookIcon size={18} />
@@ -189,7 +194,7 @@ export default function Footer() {
                 href={siteConfig.contact.instagram}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="rounded-button border border-border p-2 text-text-secondary transition-colors hover:border-primary hover:text-primary"
+                className="rounded-button border border-border p-2 text-text-secondary transition-[transform,color,border-color,background-color] duration-200 [transition-timing-function:var(--ease-soft)] hover:-translate-y-0.5 hover:border-primary hover:bg-primary/5 hover:text-primary"
                 aria-label="YOYOSO on Instagram"
               >
                 <InstagramIcon size={18} />
@@ -247,7 +252,7 @@ export default function Footer() {
       {/* Bottom bar */}
       <div className="border-t border-border">
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-3 px-4 py-4 text-sm text-text-secondary sm:flex-row">
-          <p>© 2025 YOYOSO. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} YOYOSO. All rights reserved.</p>
           <p className="text-center">
             <span className="font-medium text-text-primary">Payment:</span>{" "}
             Cash on Delivery

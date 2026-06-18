@@ -47,20 +47,27 @@ export default function ProductSection({
         transition={{ duration: 0.45, ease: "easeOut" }}
         className="mb-7 flex items-end justify-between gap-4"
       >
-        <div>
-          <h2 className="font-heading text-[26px] font-extrabold tracking-tight text-text-primary sm:text-3xl">
-            {title}
-          </h2>
-          {subtitle && (
-            <p className="mt-1.5 text-sm text-text-secondary">{subtitle}</p>
-          )}
+        <div className="flex items-stretch gap-3.5">
+          {/* Teal keyline accent — a small brand cue anchoring each section. */}
+          <span
+            aria-hidden="true"
+            className="mt-1 w-1 shrink-0 rounded-full bg-gradient-to-b from-primary to-primary-dark"
+          />
+          <div>
+            <h2 className="font-heading text-[26px] font-extrabold tracking-tight text-text-primary sm:text-3xl">
+              {title}
+            </h2>
+            {subtitle && (
+              <p className="mt-1.5 text-sm text-text-secondary">{subtitle}</p>
+            )}
+          </div>
         </div>
         <Link
           href={viewAllHref}
-          className="hidden shrink-0 items-center gap-1.5 text-sm font-semibold text-primary transition-colors hover:text-primary-dark sm:flex"
+          className="group hidden shrink-0 items-center gap-1.5 text-sm font-semibold text-primary-dark transition-colors hover:text-primary sm:flex"
         >
           {viewAllLabel}
-          <ArrowRight size={15} />
+          <ArrowRight size={15} className="transition-transform duration-200 group-hover:translate-x-0.5" />
         </Link>
       </motion.div>
 

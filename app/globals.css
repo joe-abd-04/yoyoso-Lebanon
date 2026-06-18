@@ -31,6 +31,18 @@
   --radius-button: 10px;
   --radius-badge: 20px;
 
+  /* Elevation — shadows are tinted with the deep brand slate (#1F2A2A) rather
+     than pure black, so depth reads warm and cohesive instead of grey/flat.
+     One consistent ladder used site-wide: soft (resting) → card → lift (hover). */
+  --shadow-soft: 0 1px 2px rgba(31, 42, 42, 0.04), 0 4px 12px rgba(31, 42, 42, 0.05);
+  --shadow-card: 0 2px 6px rgba(31, 42, 42, 0.05), 0 10px 24px rgba(31, 42, 42, 0.07);
+  --shadow-lift: 0 8px 18px rgba(31, 42, 42, 0.09), 0 20px 44px rgba(31, 42, 42, 0.14);
+  /* Teal halo for primary CTAs on hover — the brand "glow". */
+  --shadow-glow: 0 6px 20px rgba(43, 196, 182, 0.35);
+
+  /* Motion — one shared easing (gentle ease-out) + duration for tactile feel. */
+  --ease-soft: cubic-bezier(0.22, 1, 0.36, 1);
+
   /* Fonts */
   --font-heading: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
   --font-body: var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif;
@@ -60,9 +72,13 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-body);
-  line-height: 1.7;
+  line-height: 1.65;
   overflow-x: hidden;
   max-width: 100%;
+  /* Crisper type rendering — small but premium. */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
 /* Strong typographic hierarchy */
@@ -73,17 +89,42 @@ h4,
 h5,
 h6 {
   font-family: var(--font-heading);
-  line-height: 1.25;
+  line-height: 1.2;
 }
 
 h1,
 h2 {
-  letter-spacing: -0.025em;
+  letter-spacing: -0.03em;
+  /* Avoid lonely last words on headings. */
+  text-wrap: balance;
 }
 
 h3,
 h4 {
   letter-spacing: -0.015em;
+}
+
+/* Brand text selection + accessible, on-brand keyboard focus everywhere. */
+::selection {
+  background: color-mix(in srgb, var(--color-primary) 24%, transparent);
+  color: var(--color-text-primary);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Eyebrow label — small tracked uppercase kicker above section headings, giving
+   sections a clear, intentional hierarchy. */
+.eyebrow {
+  font-family: var(--font-heading);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-primary-dark);
 }
 
 /* NProgress route progress bar — teal brand color */

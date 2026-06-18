@@ -58,7 +58,7 @@ export default function ProductCard({ product }: ProductCardProps) {
   const href = `/product/${product.slug}`;
 
   return (
-    <div className="group flex h-full flex-col overflow-hidden rounded-card bg-white shadow-[0_2px_12px_rgba(0,0,0,0.07)] transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-[0_12px_32px_rgba(0,0,0,0.13)]">
+    <div className="group flex h-full flex-col overflow-hidden rounded-card bg-white shadow-card ring-1 ring-[#1F2A2A]/[0.04] transition-[transform,box-shadow] duration-300 [transition-timing-function:var(--ease-soft)] hover:-translate-y-1.5 hover:shadow-lift">
       {/* Image */}
       <div className="relative aspect-square overflow-hidden bg-surface">
         <Link href={href} aria-label={product.name}>
@@ -67,9 +67,14 @@ export default function ProductCard({ product }: ProductCardProps) {
             src={product.thumbnail}
             alt={product.name}
             loading="lazy"
-            className="h-full w-full object-cover transition-transform duration-400 group-hover:scale-[1.07]"
+            className="h-full w-full object-cover transition-transform duration-500 [transition-timing-function:var(--ease-soft)] group-hover:scale-[1.06]"
           />
         </Link>
+        {/* Subtle sheen on hover — lifts the photo without hiding it. */}
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#1F2A2A]/12 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+        />
 
         {/* Badge stack */}
         {badges.length > 0 && (
@@ -121,11 +126,11 @@ export default function ProductCard({ product }: ProductCardProps) {
         {/* Price */}
         <div className="mt-2">
           <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
-            <span className="text-base font-extrabold text-primary">
+            <span className="text-[17px] font-extrabold tabular-nums text-primary-dark">
               {formatUSD(product.priceUSD)}
             </span>
             {product.originalPriceUSD && (
-              <span className="text-xs text-[#aaa] line-through">
+              <span className="text-xs tabular-nums text-[#aaa] line-through">
                 {formatUSD(product.originalPriceUSD)}
               </span>
             )}
@@ -162,7 +167,7 @@ export default function ProductCard({ product }: ProductCardProps) {
             whileTap={{ scale: 0.94 }}
             transition={{ type: "spring", stiffness: 500, damping: 18 }}
             aria-label="Add to cart"
-            className="h-9 w-full rounded-button bg-primary text-[13px] font-bold text-white transition-colors hover:bg-primary-dark"
+            className="h-9 w-full rounded-button bg-primary text-[13px] font-bold text-white shadow-sm transition-[background-color,box-shadow] duration-200 hover:bg-primary-dark hover:shadow-glow"
           >
             Add to Cart
           </motion.button>
