@@ -127,6 +127,19 @@ h4 {
   color: var(--color-primary-dark);
 }
 
+/* iOS Safari (and Android) auto-zoom into any form field whose font-size is
+   below 16px on focus. Force every text-entry control to >=16px on TOUCH
+   devices only, so phones/tablets never zoom-and-stick while desktop styling is
+   untouched. These rules are unlayered, so they win over Tailwind's text-sm
+   utility (which lives in the utilities layer) without needing !important. */
+@media (pointer: coarse) {
+  input,
+  textarea,
+  select {
+    font-size: 16px;
+  }
+}
+
 /* NProgress route progress bar — teal brand color */
 #nprogress {
   pointer-events: none;

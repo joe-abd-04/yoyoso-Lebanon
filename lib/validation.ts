@@ -40,7 +40,7 @@ const email = z
   .trim()
   .min(1, "Email is required")
   .max(LIMITS.email, "Email is too long")
-  .refine((v) => EMAIL_RE.test(v), "Enter a valid email");
+  .refine((v) => EMAIL_RE.test(v), "Please enter a valid email address");
 
 /** Phone: restricted charset + at least 8 digits. */
 const phone = z

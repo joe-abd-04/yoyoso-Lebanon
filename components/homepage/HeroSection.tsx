@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronLeft, ChevronRight, ArrowRight, Sparkles, ShoppingBag, Home } from "lucide-react";
@@ -59,32 +59,74 @@ export default function HeroSection() {
   const [index, setIndex] = useState(0);
   const [direction, setDirection] = useState(1);
 
-  const goTo = useCallback(
-    (i: number) => {
-      const next = ((i % SLIDES.length) + SLIDES.length) % SLIDES.length;
-      setDirection(next > index ? 1 : -1);
-      setIndex(next);
-    },
-    [index],
-  );
+  // Latest index for event handlers (no stale closures, no re-subscribing).
+  const indexRef = useRef(0);
+  indexRef.current = index;
 
-  const next = useCallback(() => goTo(index + 1), [goTo, index]);
-  const prev = useCallback(() => goTo(index - 1), [goTo, index]);
-
-  useEffect(() => {
-    const id = setInterval(() => {
+  // Auto-rotate, restarted on any manual nav so a tap/swipe gives the new slide
+  // a fresh interval rather than flipping immediately.
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const startTimer = useCallback(() => {
+    if (timerRef.current) clearInterval(timerRef.current);
+    timerRef.current = setInterval(() => {
       setDirection(1);
       setIndex((p) => (p + 1) % SLIDES.length);
     }, ROTATE_MS);
-    return () => clearInterval(id);
-  }, [index]);
+  }, []);
+
+  useEffect(() => {
+    startTimer();
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, [startTimer]);
+
+  const goTo = useCallback(
+    (i: number) => {
+      const len = SLIDES.length;
+      const target = ((i % len) + len) % len;
+      setDirection(target >= indexRef.current ? 1 : -1);
+      setIndex(target);
+      startTimer(); // reset auto-rotate on manual navigation
+    },
+    [startTimer],
+  );
+
+  const next = useCallback(() => goTo(indexRef.current + 1), [goTo]);
+  const prev = useCallback(() => goTo(indexRef.current - 1), [goTo]);
+
+  // Horizontal swipe for touch/pointer devices. `touch-action: pan-y` on the
+  // banner lets vertical page scrolling continue while we own horizontal drags.
+  const swipeStart = useRef<{ x: number; y: number } | null>(null);
+  const onPointerDown = (e: React.PointerEvent) => {
+    swipeStart.current = { x: e.clientX, y: e.clientY };
+  };
+  const onPointerUp = (e: React.PointerEvent) => {
+    const start = swipeStart.current;
+    swipeStart.current = null;
+    if (!start) return;
+    const dx = e.clientX - start.x;
+    const dy = e.clientY - start.y;
+    // Treat as a swipe only if it's clearly horizontal (ignores taps + scrolls).
+    if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) {
+      if (dx < 0) next();
+      else prev();
+    }
+  };
 
   const slide = SLIDES[index];
 
   return (
     <section className="mx-auto w-full max-w-7xl px-4 pt-6 sm:px-8">
-      <div className="relative h-[300px] overflow-hidden rounded-3xl shadow-[0_24px_60px_-24px_rgba(27,168,155,0.6)] md:h-[460px]"
-        style={{ background: slide.gradient }}>
+      <div
+        className="relative h-[300px] overflow-hidden rounded-3xl shadow-[0_24px_60px_-24px_rgba(27,168,155,0.6)] md:h-[460px]"
+        style={{ background: slide.gradient, touchAction: "pan-y" }}
+        onPointerDown={onPointerDown}
+        onPointerUp={onPointerUp}
+        onPointerCancel={() => {
+          swipeStart.current = null;
+        }}
+      >
 
         {/* Soft light blob (top-right) + a second deeper one (bottom-left) for depth */}
         <div
@@ -194,20 +236,29 @@ export default function HeroSection() {
           <ChevronRight size={20} />
         </button>
 
-        {/* Dots */}
-        <div className="absolute bottom-4 left-1/2 z-20 flex -translate-x-1/2 gap-2">
-          {SLIDES.map((_, i) => (
-            <button
-              key={i}
-              type="button"
-              onClick={() => goTo(i)}
-              aria-label={`Go to slide ${i + 1}`}
-              aria-current={i === index}
-              className={`h-1.5 rounded-full transition-all duration-300 ${
-                i === index ? "w-7 bg-white" : "w-1.5 bg-white/45 hover:bg-white/70"
-              }`}
-            />
-          ))}
+        {/* Dots — each is a 44px-tall touch target (a small visible bar centred
+            inside), so they're easy to tap on a phone. */}
+        <div className="absolute bottom-1 left-1/2 z-30 flex -translate-x-1/2 items-center">
+          {SLIDES.map((_, i) => {
+            const active = i === index;
+            return (
+              <button
+                key={i}
+                type="button"
+                onClick={() => goTo(i)}
+                aria-label={`Go to slide ${i + 1}`}
+                aria-current={active}
+                className="flex h-11 items-center justify-center px-2.5"
+                style={{ touchAction: "manipulation" }}
+              >
+                <span
+                  className={`h-1.5 rounded-full transition-all duration-300 ${
+                    active ? "w-7 bg-white" : "w-2 bg-white/50 hover:bg-white/80"
+                  }`}
+                />
+              </button>
+            );
+          })}
         </div>
       </div>
     </section>
