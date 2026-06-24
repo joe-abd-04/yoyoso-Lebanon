@@ -55,25 +55,31 @@ export default function TrustBadges() {
           viewport={{ once: true, margin: "-40px" }}
           className="grid grid-cols-2 gap-4 lg:grid-cols-4"
         >
-          {BADGES.map(({ Icon, title, text, accentColor, bgTint }) => (
-            <motion.div
-              key={title}
-              variants={itemVariants}
-              className="flex items-center gap-3"
-            >
+          {BADGES.map(({ Icon, title, text, accentColor, bgTint }, i) => (
+            // Outer: one-time scroll reveal (Framer). Inner: continuous float —
+            // separate elements so the two transforms never fight. The negative,
+            // staggered delay puts each badge at a different point in the cycle
+            // so they drift out of unison (more natural). Reduced-motion users
+            // get them static (global prefers-reduced-motion rule).
+            <motion.div key={title} variants={itemVariants}>
               <div
-                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl"
-                style={{ backgroundColor: bgTint }}
+                className="flex items-center gap-3 animate-badge-float will-change-transform"
+                style={{ animationDelay: `${-i * 0.9}s` }}
               >
-                <Icon size={20} strokeWidth={1.75} style={{ color: accentColor }} />
-              </div>
-              <div className="min-w-0">
-                <p className="font-heading text-xs font-bold leading-tight text-text-primary sm:text-sm">
-                  {title}
-                </p>
-                <p className="mt-0.5 text-[11px] leading-snug text-text-secondary sm:text-xs">
-                  {text}
-                </p>
+                <div
+                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl"
+                  style={{ backgroundColor: bgTint }}
+                >
+                  <Icon size={20} strokeWidth={1.75} style={{ color: accentColor }} />
+                </div>
+                <div className="min-w-0">
+                  <p className="font-heading text-xs font-bold leading-tight text-text-primary sm:text-sm">
+                    {title}
+                  </p>
+                  <p className="mt-0.5 text-[11px] leading-snug text-text-secondary sm:text-xs">
+                    {text}
+                  </p>
+                </div>
               </div>
             </motion.div>
           ))}
