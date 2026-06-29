@@ -40,7 +40,7 @@ function resolveBase(slug: string, allProducts: Product[]): Product[] {
         new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
     );
   }
-  return allProducts.filter((p) => p.category === slug);
+  return allProducts.filter((p) => p.categories.includes(slug));
 }
 
 interface CategoryViewProps {
@@ -129,7 +129,7 @@ export default function CategoryView({ slug, categoryName }: CategoryViewProps) 
   const counts = useMemo(() => {
     const map: Record<string, number> = {};
     for (const c of categories) {
-      map[c.slug] = allProducts.filter((p) => p.category === c.slug).length;
+      map[c.slug] = allProducts.filter((p) => p.categories.includes(c.slug)).length;
     }
     return map;
   }, [categories, allProducts]);

@@ -14,6 +14,7 @@ export const FUSE_OPTIONS: IFuseOptions<Product> = {
     { name: "name", weight: 2 },
     { name: "tags", weight: 1.5 },
     { name: "category", weight: 1 },
+    { name: "categories", weight: 1 },
     { name: "subcategory", weight: 1 },
     { name: "description", weight: 0.5 },
   ],

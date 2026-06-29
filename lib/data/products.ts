@@ -24,8 +24,13 @@ import {
 import type { Product as ProductRow } from "@/lib/supabase/types";
 import { PRODUCT_IMAGE_PLACEHOLDER } from "@/lib/products/placeholder";
 
-/** Map a DB product row (+ resolved category slug) into the UI Product shape. */
-function mapRow(row: ProductRow, categorySlug: string): Product {
+/** Map a DB product row into the UI Product shape. `categorySlug` is the primary
+ *  category's slug; `slugById` resolves the multi-category array → slugs. */
+function mapRow(
+  row: ProductRow,
+  categorySlug: string,
+  slugById: Map<string, string>,
+): Product {
   // Products created in the admin panel may not have images yet (upload arrives
   // in Phase 9.5 step 3). Fall back to a neutral placeholder so cards/galleries
   // never render an empty/broken image.
@@ -42,11 +47,24 @@ function mapRow(row: ProductRow, categorySlug: string): Product {
         )
       : undefined;
 
+  // All categories this product belongs to (slugs). Falls back to the primary
+  // so products still work even before migration 007 backfills category_ids.
+  const categorySlugs = (row.category_ids ?? [])
+    .map((id) => slugById.get(id))
+    .filter((s): s is string => Boolean(s));
+  const categories =
+    categorySlugs.length > 0
+      ? categorySlugs
+      : categorySlug
+        ? [categorySlug]
+        : [];
+
   return {
     id: row.id,
     slug: row.slug,
     name: row.name,
     category: categorySlug,
+    categories,
     subcategory: row.subcategory ?? "",
     priceUSD: row.price_usd,
     priceLBP,
@@ -94,7 +112,7 @@ export const getProducts = cache(async (): Promise<Product[]> => {
 
     const slugById = new Map(catRows.map((c) => [c.id, c.slug]));
     return productRows.map((row) =>
-      mapRow(row, slugById.get(row.category_id) ?? ""),
+      mapRow(row, slugById.get(row.category_id) ?? "", slugById),
     );
   } catch (err) {
     console.error("[getProducts] Unexpected error:", err);
@@ -113,7 +131,7 @@ export async function getProductBySlug(
 export async function getProductsByCategory(
   categorySlug: string,
 ): Promise<Product[]> {
-  return (await getProducts()).filter((p) => p.category === categorySlug);
+  return (await getProducts()).filter((p) => p.categories.includes(categorySlug));
 }
 
 /** Featured products. */
@@ -141,6 +159,6 @@ export async function getRelatedProducts(
   limit = 8,
 ): Promise<Product[]> {
   return (await getProducts())
-    .filter((p) => p.category === categorySlug && p.slug !== currentSlug)
+    .filter((p) => p.categories.includes(categorySlug) && p.slug !== currentSlug)
     .slice(0, limit);
 }

@@ -87,7 +87,9 @@ export async function listAdminProducts(opts: {
 
   const search = opts.search?.trim();
   if (search) query = query.ilike("name", `%${search}%`);
-  if (opts.categoryId) query = query.eq("category_id", opts.categoryId);
+  // Match products that have this category anywhere in their list (primary or
+  // additional), using the array-contains operator (GIN-indexed).
+  if (opts.categoryId) query = query.contains("category_ids", [opts.categoryId]);
   if (opts.stock === "in") query = query.eq("in_stock", true);
   if (opts.stock === "out") query = query.eq("in_stock", false);
 
@@ -172,6 +174,11 @@ export function productRowToFormInput(
     originalPriceUSD:
       row.original_price_usd != null ? String(row.original_price_usd) : "",
     categoryId: row.category_id,
+    // Additional categories = stored array minus the primary (the form's primary
+    // select handles category_id). Carried over by edit AND duplicate.
+    extraCategoryIds: (row.category_ids ?? []).filter(
+      (id) => id !== row.category_id,
+    ),
     subcategory: row.subcategory ?? "",
     sku: opts?.blankSku ? "" : (row.sku ?? ""),
     badge: row.badge === "SALE" || row.badge === "HOT" ? row.badge : "",

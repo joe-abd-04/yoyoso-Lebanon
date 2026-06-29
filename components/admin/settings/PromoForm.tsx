@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { Tag } from "lucide-react";
 import { useUIStore } from "@/store/uiStore";
 import { updatePromo } from "@/app/admin/settings/actions";
+import { numberInputGuard } from "@/lib/forms/number-input";
 import type { PromoConfig, PromoType } from "@/lib/settings/shared";
 import SettingsCard, {
   fieldClass,
@@ -91,7 +92,8 @@ export default function PromoForm({
               max={type === "percent" ? "100" : undefined}
               value={value}
               onChange={(e) => setValue(e.target.value)}
-              className={`${fieldClass(!!error)} ${type === "fixed" ? "pl-7" : ""}`}
+              {...numberInputGuard}
+              className={`${fieldClass(!!error)} no-spinner ${type === "fixed" ? "pl-7" : ""}`}
             />
             {type === "percent" && (
               <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-text-secondary">

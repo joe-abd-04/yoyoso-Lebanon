@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { Truck } from "lucide-react";
 import { useUIStore } from "@/store/uiStore";
+import { numberInputGuard } from "@/lib/forms/number-input";
 import { updateDeliveryFee } from "@/app/admin/settings/actions";
 import SettingsCard, {
   fieldClass,
@@ -51,7 +52,8 @@ export default function DeliveryFeeForm({ initialFee }: { initialFee: number }) 
               min="0"
               value={fee}
               onChange={(e) => setFee(e.target.value)}
-              className={`${fieldClass(!!error)} pl-7`}
+              {...numberInputGuard}
+              className={`${fieldClass(!!error)} no-spinner pl-7`}
             />
           </div>
           <FieldError msg={error} />

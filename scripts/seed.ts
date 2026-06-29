@@ -185,6 +185,7 @@ async function main() {
         name: p.name,
         description: p.description ?? "",
         category_id,
+        category_ids: [category_id],
         subcategory: p.subcategory ? p.subcategory : null,
         price_usd: p.priceUSD,
         original_price_usd: p.originalPriceUSD ?? null,

@@ -359,6 +359,9 @@ export const adminProductSchema = z
       .refine((v) => v === "" || isPositiveNumber(v), "Enter a valid price")
       .refine((v) => v === "" || Number(v) <= 1_000_000, "Price is too high"),
     categoryId: z.string().uuid("Please select a category"),
+    // Additional categories the product also shows in (beyond the primary one).
+    // The server unions these with categoryId into products.category_ids.
+    extraCategoryIds: z.array(z.string().uuid()).max(20, "Too many categories"),
     subcategory: z.string().trim().max(100, "Too long"),
     sku: z.string().trim().min(1, "SKU is required").max(60, "SKU is too long"),
     badge: z.enum(BADGE_OPTIONS),

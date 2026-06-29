@@ -40,7 +40,8 @@ export type Product = {
   slug: string
   name: string
   description: string
-  category_id: string
+  category_id: string         // PRIMARY category (drives subcategory/breadcrumb)
+  category_ids: string[]      // every category the product is shown in (incl. primary)
   subcategory: string | null
   price_usd: number
   original_price_usd: number | null
@@ -149,11 +150,17 @@ export type CategoryInsert = Omit<Category, 'id' | 'created_at'> & {
   created_at?: string
 }
 
-export type ProductInsert = Omit<Product, 'id' | 'created_at' | 'updated_at' | 'hide_new_badge'> & {
+export type ProductInsert = Omit<
+  Product,
+  'id' | 'created_at' | 'updated_at' | 'hide_new_badge' | 'category_ids'
+> & {
   id?: string
   created_at?: string
   updated_at?: string
   hide_new_badge?: boolean
+  // Optional on insert — the DB column defaults to '{}' (then backfilled / set
+  // explicitly by the create/update actions).
+  category_ids?: string[]
 }
 
 export type OrderInsert = Omit<Order, 'id' | 'created_at' | 'user_id'> & {

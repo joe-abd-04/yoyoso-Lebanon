@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { numberInputGuard } from "@/lib/forms/number-input";
 import {
   PRICE_PRESETS,
   type Filters,
@@ -52,9 +53,10 @@ function PriceRange({
         min={0}
         value={minInput}
         onChange={(e) => setMinInput(e.target.value)}
+        {...numberInputGuard}
         placeholder="Min"
         aria-label="Minimum price (USD)"
-        className="w-full rounded-button border border-border bg-white px-2 py-1.5 text-sm focus:border-primary focus:outline-none"
+        className="no-spinner w-full rounded-button border border-border bg-white px-2 py-1.5 text-sm focus:border-primary focus:outline-none"
       />
       <span className="text-text-secondary">–</span>
       <input
@@ -63,9 +65,10 @@ function PriceRange({
         min={0}
         value={maxInput}
         onChange={(e) => setMaxInput(e.target.value)}
+        {...numberInputGuard}
         placeholder="Max"
         aria-label="Maximum price (USD)"
-        className="w-full rounded-button border border-border bg-white px-2 py-1.5 text-sm focus:border-primary focus:outline-none"
+        className="no-spinner w-full rounded-button border border-border bg-white px-2 py-1.5 text-sm focus:border-primary focus:outline-none"
       />
       <button
         type="button"

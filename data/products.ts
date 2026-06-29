@@ -28,8 +28,10 @@ export interface Product {
   id: string;
   slug: string;
   name: string;
-  /** Category slug (see data/categories.ts). */
+  /** PRIMARY category slug (see data/categories.ts) — drives breadcrumb/subcategory. */
   category: string;
+  /** Every category slug this product belongs to (includes the primary). */
+  categories: string[];
   subcategory: string;
 
   // Dual currency — USD + LBP always stored together for Lebanon.
@@ -153,6 +155,7 @@ function makeProduct(seed: ProductSeed, index: number): Product {
     slug: seed.slug,
     name: seed.name,
     category: seed.category,
+    categories: [seed.category],
     subcategory: seed.subcategory ?? "",
     priceUSD: seed.priceUSD,
     priceLBP,

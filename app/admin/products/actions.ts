@@ -55,6 +55,11 @@ function parseKeywords(raw: string | undefined): string[] {
   return out;
 }
 
+/** Round a money value to exactly 2 decimals (Math.round — no truncation). */
+function round2(n: number): number {
+  return Math.round(n * 100) / 100;
+}
+
 /** Turn a product name into a URL-safe slug base. */
 function slugify(name: string): string {
   return (
@@ -127,9 +132,14 @@ function buildDbFields(data: AdminProductInput) {
     name: sanitizeText(data.name),
     description: sanitizeText(data.description),
     category_id: data.categoryId,
+    // Primary + any additional categories, de-duplicated (primary always first).
+    category_ids: [...new Set([data.categoryId, ...data.extraCategoryIds])],
     subcategory: data.subcategory ? sanitizeText(data.subcategory) : null,
-    price_usd: Number(data.priceUSD),
-    original_price_usd: data.originalPriceUSD === "" ? null : Number(data.originalPriceUSD),
+    // Round cleanly to 2 decimals (Math.round, never floor) so a typed "10"
+    // stores as 10.00 and no floating-point drift can sneak in.
+    price_usd: round2(Number(data.priceUSD)),
+    original_price_usd:
+      data.originalPriceUSD === "" ? null : round2(Number(data.originalPriceUSD)),
     sku: sanitizeText(data.sku),
     in_stock: data.inStock,
     badge: data.badge === "" ? null : data.badge,

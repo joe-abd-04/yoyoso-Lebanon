@@ -174,6 +174,20 @@ h4 {
   transform: rotate(3deg) translate(0px, -4px);
 }
 
+/* Hide number-input spinner buttons (admin price / fee / promo fields, and the
+   price-range / quantity inputs) so the value can only be set by typing —
+   paired with numberInputGuard (lib/forms/number-input.ts) which also blocks
+   wheel + arrow-key nudging. */
+.no-spinner::-webkit-outer-spin-button,
+.no-spinner::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.no-spinner {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
 /* Hide scrollbar for category nav strip */
 .scrollbar-hide {
   -ms-overflow-style: none;

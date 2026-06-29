@@ -2,6 +2,7 @@
 
 import { Minus, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { numberInputGuard } from "@/lib/forms/number-input";
 
 const MIN = 1;
 const MAX = 99;
@@ -46,6 +47,7 @@ export default function QuantitySelector({
           const n = Number(e.target.value);
           onChange(Number.isFinite(n) && n >= MIN ? clamp(n) : MIN);
         }}
+        {...numberInputGuard}
         aria-label="Quantity"
         className="h-full w-12 [appearance:textfield] border-x border-border text-center text-sm font-semibold text-text-primary focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
       />

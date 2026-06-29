@@ -17,6 +17,7 @@ import {
   type AdminProductInput,
 } from "@/lib/validation";
 import { NAMED_COLORS } from "@/lib/products/colors";
+import { numberInputGuard } from "@/lib/forms/number-input";
 import type { CategoryOption } from "@/lib/data/admin-products";
 import {
   createProduct,
@@ -39,6 +40,7 @@ const EMPTY: AdminProductInput = {
   priceUSD: "",
   originalPriceUSD: "",
   categoryId: "",
+  extraCategoryIds: [],
   subcategory: "",
   sku: "",
   badge: "",
@@ -195,6 +197,17 @@ export default function ProductForm({
   const selectedCategory = categories.find((c) => c.id === selectedCategoryId);
   const subOptions = selectedCategory?.subcategories ?? [];
 
+  // Additional categories the product also appears under (beyond the primary).
+  const extraCategoryIds = watch("extraCategoryIds");
+  const toggleExtraCategory = (id: string) => {
+    const cur = getValues("extraCategoryIds");
+    setValue(
+      "extraCategoryIds",
+      cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id],
+      { shouldDirty: true },
+    );
+  };
+
   // Images are managed by <ProductImageUploader>; mirror its state into RHF.
   const images = watch("images");
   const thumbnail = watch("thumbnail");
@@ -270,7 +283,8 @@ export default function ProductForm({
               min="0"
               inputMode="decimal"
               {...register("priceUSD")}
-              className={inputCls}
+              {...numberInputGuard}
+              className={`${inputCls} no-spinner`}
             />
             <FieldError msg={errors.priceUSD?.message} />
           </div>
@@ -285,7 +299,8 @@ export default function ProductForm({
               min="0"
               inputMode="decimal"
               {...register("originalPriceUSD")}
-              className={inputCls}
+              {...numberInputGuard}
+              className={`${inputCls} no-spinner`}
             />
             <FieldError msg={errors.originalPriceUSD?.message} />
           </div>
@@ -304,8 +319,15 @@ export default function ProductForm({
               id="categoryId"
               {...register("categoryId")}
               onChange={(e) => {
-                setValue("categoryId", e.target.value, { shouldValidate: true });
+                const v = e.target.value;
+                setValue("categoryId", v, { shouldValidate: true });
                 setValue("subcategory", ""); // reset sub when category changes
+                // Don't let the primary also sit in the "also show in" list.
+                setValue(
+                  "extraCategoryIds",
+                  getValues("extraCategoryIds").filter((id) => id !== v),
+                  { shouldDirty: true },
+                );
               }}
               className={inputCls}
             >
@@ -369,6 +391,46 @@ export default function ProductForm({
             </p>
             <FieldError msg={errors.badge?.message} />
           </div>
+        </div>
+
+        {/* Additional categories — show this product under more than one category */}
+        <div className="mt-4">
+          <Label hint="(optional)">Also show in</Label>
+          <p className="-mt-1 mb-2 text-xs text-text-secondary">
+            Tick any extra categories this product should also appear under. Its
+            subcategory applies to the main category above.
+          </p>
+          {categories.filter((c) => c.id !== selectedCategoryId).length === 0 ? (
+            <p className="text-sm text-text-secondary">
+              Pick a main category first.
+            </p>
+          ) : (
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+              {categories
+                .filter((c) => c.id !== selectedCategoryId)
+                .map((c) => {
+                  const checked = extraCategoryIds.includes(c.id);
+                  return (
+                    <label
+                      key={c.id}
+                      className={`flex cursor-pointer select-none items-center gap-2 rounded-button border px-3 py-2 text-sm transition-colors ${
+                        checked
+                          ? "border-primary bg-primary/5"
+                          : "border-border hover:border-primary/40"
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={() => toggleExtraCategory(c.id)}
+                        className="h-4 w-4 accent-primary"
+                      />
+                      <span className="text-text-primary">{c.name}</span>
+                    </label>
+                  );
+                })}
+            </div>
+          )}
         </div>
 
         {/* Search keywords (admin-only; powers site search, not shown to customers) */}
