@@ -200,7 +200,10 @@ export default function ProductInfo({
       {/* Details accordions */}
       <div className="mt-6">
         <ProductAccordion title="Description" defaultOpen>
-          <p className="leading-relaxed">
+          {/* Descriptions are stored with real newlines (verified: char 10).
+              Inline whiteSpace:pre-line preserves them + still wraps — set as an
+              inline style so it can't be dropped by class purging/build cache. */}
+          <p className="leading-relaxed" style={{ whiteSpace: "pre-line" }}>
             {product.description ??
               "No description available for this product yet."}
           </p>
