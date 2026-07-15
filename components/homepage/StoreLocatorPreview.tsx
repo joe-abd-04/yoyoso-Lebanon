@@ -5,8 +5,12 @@ import { motion, type Variants } from "framer-motion";
 import { MapPin, Clock, Phone, Navigation, ArrowRight, Store } from "lucide-react";
 import type { Store as StoreData } from "@/data/stores";
 
-const cleanAddress = (address: string) =>
-  address.startsWith("TODO") ? "Address coming soon" : address;
+// A real, displayable address — empty string when missing or still a "TODO"
+// placeholder, so the address line is omitted entirely (no "coming soon").
+const realAddress = (address: string | null | undefined) => {
+  const a = (address ?? "").trim();
+  return a && !a.startsWith("TODO") ? a : "";
+};
 
 const directionsUrl = (mapsUrl: string, query: string) =>
   mapsUrl ||
@@ -65,10 +69,12 @@ export default function StoreLocatorPreview({
             </span>
 
             <div className="mt-3 space-y-1.5 text-sm text-text-secondary">
-              <div className="flex items-start gap-2">
-                <MapPin size={14} className="mt-0.5 shrink-0 text-primary/60" />
-                <span>{cleanAddress(store.address)}</span>
-              </div>
+              {realAddress(store.address) && (
+                <div className="flex items-start gap-2">
+                  <MapPin size={14} className="mt-0.5 shrink-0 text-primary/60" />
+                  <span>{realAddress(store.address)}</span>
+                </div>
+              )}
               <div className="flex items-center gap-2">
                 <Clock size={14} className="shrink-0 text-primary/60" />
                 <span>{store.hours}</span>

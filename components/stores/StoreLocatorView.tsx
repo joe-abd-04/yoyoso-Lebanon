@@ -22,8 +22,12 @@ const REGION_COLORS: Record<string, string> = {
   "North Lebanon": "bg-[#E4F4F1] text-[#059669]",
 };
 
-const cleanAddress = (addr: string) =>
-  addr.startsWith("TODO") ? "Address coming soon" : addr;
+// A real, displayable address — empty string when missing or still a "TODO"
+// placeholder, so the address line is omitted entirely (no "coming soon").
+const realAddress = (addr: string | null | undefined) => {
+  const a = (addr ?? "").trim();
+  return a && !a.startsWith("TODO") ? a : "";
+};
 
 export default function StoreLocatorView({ stores }: { stores: Store[] }) {
   const [activeRegion, setActiveRegion] = useState<Region>("All");
@@ -84,6 +88,7 @@ export default function StoreLocatorView({ stores }: { stores: Store[] }) {
               `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
                 store.name + " " + store.region,
               )}`;
+            const address = realAddress(store.address);
 
             return (
               <div
@@ -105,10 +110,12 @@ export default function StoreLocatorView({ stores }: { stores: Store[] }) {
                 </div>
 
                 <div className="mt-4 space-y-2.5 text-sm text-text-secondary">
-                  <div className="flex items-start gap-2">
-                    <MapPin size={15} className="mt-0.5 shrink-0 text-primary" />
-                    <span>{cleanAddress(store.address)}</span>
-                  </div>
+                  {address && (
+                    <div className="flex items-start gap-2">
+                      <MapPin size={15} className="mt-0.5 shrink-0 text-primary" />
+                      <span>{address}</span>
+                    </div>
+                  )}
                   <div className="flex items-center gap-2">
                     <Clock size={15} className="shrink-0 text-primary" />
                     <span>{store.hours}</span>
