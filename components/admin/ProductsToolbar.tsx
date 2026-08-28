@@ -66,8 +66,9 @@ export default function ProductsToolbar({
           type="search"
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          placeholder="Search by name…"
+          placeholder="Search by name or SKU…"
           maxLength={100}
+          aria-label="Search products by name or SKU"
           className="w-full rounded-button border border-border bg-white py-2.5 pl-9 pr-3 text-sm text-text-primary outline-none transition-colors focus:border-primary"
         />
       </div>

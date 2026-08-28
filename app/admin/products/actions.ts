@@ -447,9 +447,30 @@ export async function bulkDeleteProducts(
 // OpenAI-compatible chat API and parses back a short list of lowercase search
 // keywords. Admin-only, zod-validated, fails soft (the manual field always works).
 
-// Groq free-tier model. Fast + cheap; swap if Groq deprecates it.
-const GROQ_MODEL = "llama-3.1-8b-instant";
+// Groq retires model names regularly — the previous model here
+// ("llama-3.1-8b-instant") was removed from their catalog and every call started
+// returning HTTP 404 `model_not_found`, which is what silently broke this button.
+//
+// If it breaks again with the "no longer available" message below, list the
+// current models with:
+//   curl https://api.groq.com/openai/v1/models -H "Authorization: Bearer $GROQ_API_KEY"
+// and put a current chat model here.
+const GROQ_MODEL = "openai/gpt-oss-120b";
 const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
+
+// Groq's current chat models are REASONING models: they spend tokens thinking
+// before answering. Two consequences we have to design around —
+//  1. The token cap must cover the reasoning too. The old 120-token budget got
+//     eaten by reasoning and came back with `finish_reason: "length"` and an
+//     EMPTY answer, so a bare model swap would still have looked broken.
+//  2. `max_tokens` is deprecated for these models; `max_completion_tokens` is
+//     the supported field.
+// `reasoning_effort: "low"` keeps this ~400ms — it's a keyword list, not a maths
+// problem. gpt-oss also returns its thinking in a separate `reasoning` field, so
+// it can never contaminate the answer we parse.
+const GROQ_MAX_COMPLETION_TOKENS = 512;
+const GROQ_REASONING_EFFORT = "low";
+const GROQ_TIMEOUT_MS = 15000;
 
 export type SuggestKeywordsResult =
   | { ok: true; keywords: string[] }
@@ -466,7 +487,14 @@ const suggestSchema = z.object({
  *  phrases like "funny socks" become "funny" + "socks". Lowercased + de-duped. */
 function parseAIKeywords(raw: string): string[] {
   if (!raw) return [];
-  const text = raw.replace(/```(?:json)?/gi, "").trim();
+  const text = raw
+    // Reasoning models can inline their thinking in <think>…</think> instead of
+    // the separate `reasoning` field. Drop it (both a closed block and an
+    // unterminated one) so it never leaks into the keywords.
+    .replace(/<think>[\s\S]*?<\/think>/gi, "")
+    .replace(/<think>[\s\S]*$/i, "")
+    .replace(/```(?:json)?/gi, "")
+    .trim();
 
   let parts: string[] = [];
   const arr = text.match(/\[[\s\S]*\]/);
@@ -514,18 +542,25 @@ export async function suggestKeywords(input: {
     return { ok: false, error: "Add a product name first, then try again." };
   }
 
-  const apiKey = process.env.GROQ_API_KEY;
+  const apiKey = process.env.GROQ_API_KEY?.trim();
   if (!apiKey) {
+    // Expected on a local machine where GROQ_API_KEY isn't in .env.local (it is
+    // set in Vercel for production). Say so plainly instead of looking broken.
+    console.warn(
+      "[suggestKeywords] GROQ_API_KEY is not set — AI suggestions disabled. " +
+        "Add it to .env.local (it is configured in Vercel for production).",
+    );
     return {
       ok: false,
-      error: "AI suggestions aren't configured. You can add keywords manually.",
+      error:
+        "AI suggestions aren't set up on this environment (no API key). Type keywords manually — everything else works.",
     };
   }
 
   const { name, description } = parsed.data;
 
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 15000);
+  const timeout = setTimeout(() => controller.abort(), GROQ_TIMEOUT_MS);
   try {
     const res = await fetch(GROQ_URL, {
       method: "POST",
@@ -538,7 +573,8 @@ export async function suggestKeywords(input: {
       body: JSON.stringify({
         model: GROQ_MODEL,
         temperature: 0.3,
-        max_tokens: 120,
+        max_completion_tokens: GROQ_MAX_COMPLETION_TOKENS,
+        reasoning_effort: GROQ_REASONING_EFFORT,
         messages: [
           {
             role: "system",
@@ -556,20 +592,90 @@ export async function suggestKeywords(input: {
     });
 
     if (!res.ok) {
-      console.error("[suggestKeywords] Groq HTTP", res.status);
-      if (res.status === 429) {
-        return { ok: false, error: "AI is busy right now — try again in a moment." };
+      // Log the REAL error server-side (status + Groq's own message/code) so a
+      // future breakage is one glance at the Vercel logs, not a guess.
+      const bodyText = await res.text().catch(() => "");
+      let apiCode = "";
+      let apiMessage = "";
+      try {
+        const parsedErr = JSON.parse(bodyText) as {
+          error?: { code?: string; message?: string };
+        };
+        apiCode = parsedErr.error?.code ?? "";
+        apiMessage = parsedErr.error?.message ?? "";
+      } catch {
+        // non-JSON error body — the raw text is logged below
       }
-      return { ok: false, error: "Couldn't get suggestions right now. Please try again." };
+      console.error(
+        `[suggestKeywords] Groq HTTP ${res.status} model=${GROQ_MODEL} ` +
+          `code=${apiCode || "n/a"} message=${apiMessage || bodyText.slice(0, 300) || "n/a"}`,
+      );
+
+      // Distinct, actionable message per failure mode.
+      if (res.status === 401 || res.status === 403) {
+        return {
+          ok: false,
+          error:
+            "The AI key was rejected (invalid or expired GROQ_API_KEY). Keywords still work manually.",
+        };
+      }
+      if (apiCode === "model_not_found" || res.status === 404) {
+        return {
+          ok: false,
+          error: `The AI model "${GROQ_MODEL}" is no longer available on Groq, so it needs updating in the code (GROQ_MODEL in app/admin/products/actions.ts). Type keywords manually for now.`,
+        };
+      }
+      if (res.status === 429) {
+        const retryAfter = res.headers.get("retry-after");
+        return {
+          ok: false,
+          error: retryAfter
+            ? `AI rate limit reached — try again in about ${retryAfter}s.`
+            : "AI rate limit reached — try again in a moment.",
+        };
+      }
+      if (res.status >= 500) {
+        return {
+          ok: false,
+          error: "Groq's AI service is temporarily unavailable. Try again shortly.",
+        };
+      }
+      if (res.status === 400) {
+        return {
+          ok: false,
+          error: `The AI request was rejected${apiMessage ? ` (${apiMessage.slice(0, 120)})` : ""}. Type keywords manually.`,
+        };
+      }
+      return {
+        ok: false,
+        error: `Couldn't get suggestions (error ${res.status}). Please try again.`,
+      };
     }
 
     const data = (await res.json()) as {
-      choices?: { message?: { content?: string } }[];
+      choices?: {
+        finish_reason?: string;
+        message?: { content?: string };
+      }[];
     };
-    const content = data.choices?.[0]?.message?.content ?? "";
+    const choice = data.choices?.[0];
+    const content = choice?.message?.content ?? "";
     const keywords = parseAIKeywords(content);
 
     if (keywords.length === 0) {
+      // Most likely cause: the reasoning ate the token budget, so the answer came
+      // back empty/truncated. Log enough to tell that apart from a vague model.
+      console.error(
+        `[suggestKeywords] No keywords parsed. model=${GROQ_MODEL} ` +
+          `finish_reason=${choice?.finish_reason ?? "n/a"} contentLength=${content.length}`,
+      );
+      if (choice?.finish_reason === "length") {
+        return {
+          ok: false,
+          error:
+            "The AI ran out of room before answering. Try again, or add keywords manually.",
+        };
+      }
       return {
         ok: false,
         error: "No suggestions came back. Add more detail, or type keywords manually.",
@@ -578,12 +684,16 @@ export async function suggestKeywords(input: {
     return { ok: true, keywords };
   } catch (err) {
     const aborted = err instanceof Error && err.name === "AbortError";
-    console.error("[suggestKeywords]", err);
+    console.error(
+      `[suggestKeywords] ${aborted ? "timeout" : "network/parse error"} ` +
+        `after ${GROQ_TIMEOUT_MS}ms model=${GROQ_MODEL}:`,
+      err,
+    );
     return {
       ok: false,
       error: aborted
-        ? "The AI took too long. Please try again."
-        : "Couldn't reach the AI service. Please try again.",
+        ? `The AI took longer than ${GROQ_TIMEOUT_MS / 1000}s to respond. Please try again.`
+        : "Couldn't reach the AI service (network error). Check your connection and try again.",
     };
   } finally {
     clearTimeout(timeout);

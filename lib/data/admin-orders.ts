@@ -9,6 +9,7 @@
 // without ever loading them all into memory.
 
 import { createServerClient } from "@/lib/supabase/server";
+import { sanitizeSearchTerm } from "@/lib/data/search-term";
 import type { Order, OrderItem } from "@/lib/supabase/types";
 
 export const ADMIN_ORDERS_PAGE_SIZE = 20;
@@ -41,15 +42,6 @@ export type ListAdminOrdersResult = {
   pageSize: number;
   totalPages: number;
 };
-
-/**
- * Strip characters that are significant inside a PostgREST `.or()` filter string
- * (commas separate conditions, parentheses group, `*` is the ilike wildcard) so
- * a user's search term can't break or inject into the query.
- */
-function sanitizeSearchTerm(term: string): string {
-  return term.replace(/[,()*\\%]/g, "").trim().slice(0, 100);
-}
 
 function itemCountOf(items: OrderItem[] | null | undefined): number {
   return (items ?? []).reduce((sum, i) => sum + (i.quantity || 0), 0);

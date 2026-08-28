@@ -117,8 +117,22 @@ export default function ProductForm({
       return;
     }
     setAiLoading(true);
-    const res = await suggestKeywords({ name, description });
-    setAiLoading(false);
+    let res: Awaited<ReturnType<typeof suggestKeywords>>;
+    try {
+      res = await suggestKeywords({ name, description });
+    } catch (err) {
+      // A server action can reject outright (deploy mid-request, network drop).
+      // Without this the button would stay stuck on "Suggesting…" forever, which
+      // is exactly the "it just does nothing" symptom we're fixing.
+      console.error("[suggestKeywords] request failed", err);
+      showToast(
+        "Couldn't reach the server for AI suggestions. Please try again.",
+        "error",
+      );
+      return;
+    } finally {
+      setAiLoading(false);
+    }
     if (!res.ok) {
       showToast(res.error, "error");
       return;

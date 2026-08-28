@@ -9,6 +9,7 @@
 import { createServerClient } from "@/lib/supabase/server";
 import { PRODUCT_IMAGE_PLACEHOLDER } from "@/lib/products/placeholder";
 import { colorHexByName } from "@/lib/products/colors";
+import { sanitizeSearchTerm } from "@/lib/data/search-term";
 import type { Product as ProductRow } from "@/lib/supabase/types";
 import type { AdminProductInput } from "@/lib/validation";
 
@@ -85,8 +86,13 @@ export async function listAdminProducts(opts: {
 
   let query = supabase.from("products").select("*", { count: "exact" });
 
-  const search = opts.search?.trim();
-  if (search) query = query.ilike("name", `%${search}%`);
+  // Search matches product NAME *or* SKU (case-insensitive, partial), so an
+  // admin can paste a SKU straight into the box. Sanitized because `.or()` takes
+  // a filter string where commas/parens/wildcards are significant.
+  const search = sanitizeSearchTerm(opts.search ?? "");
+  if (search) {
+    query = query.or(`name.ilike.*${search}*,sku.ilike.*${search}*`);
+  }
   // Match products that have this category anywhere in their list (primary or
   // additional), using the array-contains operator (GIN-indexed).
   if (opts.categoryId) query = query.contains("category_ids", [opts.categoryId]);
